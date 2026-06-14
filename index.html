@@ -413,7 +413,10 @@ tr.tr-tribute .pst-name{color:#02702A!important;font-weight:900!important}
 .fv-btn-skipall{background:transparent;color:var(--muted);border:1px solid #2a2a3a;font-size:9px}
 /* ── Match card header ── */
 .fv-header{flex-shrink:0;background:linear-gradient(160deg,#111128 0%,#0d0d1f 100%);border-bottom:3px solid rgba(241,192,115,0.25);padding:0 12px 10px}
+@keyframes gfShimmer{0%{background-position:200% center}100%{background-position:-200% center}}
+@keyframes gfPulse{0%,100%{box-shadow:0 0 12px rgba(241,192,115,0.5),0 2px 8px rgba(241,192,115,0.3)}50%{box-shadow:0 0 28px rgba(241,192,115,0.9),0 4px 16px rgba(241,192,115,0.6)}}
 .fv-round-badge{display:block;font-size:11px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:#111;background:linear-gradient(90deg,#c8952a 0%,#f1c073 45%,#e8b55a 100%);text-align:center;padding:8px 0;margin:0 -12px 12px;border-radius:0;box-shadow:0 2px 8px rgba(241,192,115,0.25)}
+.fv-round-badge.is-gf{font-size:14px;letter-spacing:3px;padding:12px 0;color:#1a0a00;background:linear-gradient(90deg,#7a4f00 0%,#c8952a 18%,#f1c073 35%,#fff8e0 50%,#f1c073 65%,#c8952a 82%,#7a4f00 100%);background-size:300% auto;animation:gfShimmer 2.5s linear infinite,gfPulse 2s ease-in-out infinite;text-shadow:0 1px 2px rgba(255,255,255,0.4)}
 .fv-match-card{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px}
 .fv-match-team{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0}
 .fv-match-team.right{align-items:flex-end}
@@ -5054,9 +5057,12 @@ function fvRenderGame(){
   document.getElementById('fvResultPopup').style.display='none';
 
   const g=FV.games[FV.idx];
-  document.getElementById('fvRound').textContent=g.roundLabel+(g.roundLabel==='GRAND FINAL'?' 🏆':'');
+  const isGF=g.roundLabel==='GRAND FINAL';
+  const roundEl=document.getElementById('fvRound');
+  roundEl.textContent=isGF?'🏆 GRAND FINAL 🏆':g.roundLabel;
+  roundEl.className='fv-round-badge'+(isGF?' is-gf':'');
   document.getElementById('fvMyName').textContent=myTeam();
-  document.getElementById('fvOppName').textContent=fvLabel(g.opp.name);
+  document.getElementById('fvOppName').textContent=fvShort(g.opp.name);
   const fvOppLblEl=document.getElementById('fvOppLbl');if(fvOppLblEl)fvOppLblEl.textContent=fvShort(g.opp.name);
   const oppEmojiEl=document.getElementById('fvOppEmoji');if(oppEmojiEl)oppEmojiEl.textContent=fvEmoji(g.opp.name);
   document.getElementById('fvMyScore').textContent='0';
@@ -5072,7 +5078,6 @@ function fvRenderGame(){
     const el=document.getElementById(id);if(el)el.disabled=false;
   });
   // Show choose-how-to-watch popup
-  const isGF=g.roundLabel==='GRAND FINAL';
   document.getElementById('fvChooseEmoji').textContent=isGF?'🏆':'🏉';
   document.getElementById('fvChooseTitle').textContent=g.roundLabel;
   document.getElementById('fvChooseSub').textContent=`${myTeam()} vs ${fvShort(g.opp.name)}`;
@@ -5114,40 +5119,42 @@ function fvOppConv(oppName){
 
 function fvGenerateEvents(g){
   const events=[];
-  const used=new Set([40]);
-  function pickMin(){let m,tries=0;do{m=rand(1,79);tries++;}while(used.has(m)&&tries<120);used.add(m);return m;}
+  const used=new Set([40,41]); // reserve halftime slot + conversion slot
+  // Reserve 2 minutes per try (try + conversion), penalty goals get 1
+  function pickTryMin(){let m,t=0;do{m=rand(1,77);t++;}while((used.has(m)||used.has(m+1))&&t<150);used.add(m);used.add(m+1);return m;}
+  function pickPenMin(){let m,t=0;do{m=rand(1,79);t++;}while(used.has(m)&&t<100);used.add(m);return m;}
 
-  // My tries
+  // My tries — conversion always at m+0.5 so it sorts directly after try, displays as m+1
   for(let i=0;i<g.myTr;i++){
-    const m=pickMin();
+    const m=pickTryMin();
     const scorer=fvPickMyScorer();
     const converted=Math.random()>0.18;
     events.push({min:m,team:'me',icon:'🏉',body:`<strong>${scorer}</strong> scores!`,pts:4});
-    const cm=Math.min(m+1,79);
     if(converted){
-      events.push({min:cm,team:'me',icon:'✅',body:`Conversion — ${FV.myConv}`,pts:2,cls:'is-convert'});
+      events.push({min:m+0.5,team:'me',icon:'🎯',body:`Conversion — ${FV.myConv}`,pts:2,cls:'is-convert'});
     } else {
-      events.push({min:cm,team:'me',icon:'❌',body:`Conversion missed — ${FV.myConv}`,pts:0,cls:'is-missed'});
+      events.push({min:m+0.5,team:'me',icon:'❌',body:`Conversion missed — ${FV.myConv}`,pts:0,cls:'is-missed'});
     }
   }
   // Opp tries
   const oc=fvOppConv(g.opp.name);
   for(let i=0;i<g.oppTr;i++){
-    const m=pickMin();
+    const m=pickTryMin();
     const scorer=fvPickOppScorer(g.opp.name);
     const converted=Math.random()>0.18;
     events.push({min:m,team:'opp',icon:'🏉',body:`<strong>${scorer}</strong> scores for ${fvShort(g.opp.name)}`,pts:4});
-    const cm=Math.min(m+1,79);
     if(converted){
-      events.push({min:cm,team:'opp',icon:'✅',body:`Conversion — ${oc}`,pts:2,cls:'is-convert'});
+      events.push({min:m+0.5,team:'opp',icon:'🎯',body:`Conversion — ${oc}`,pts:2,cls:'is-convert'});
     } else {
-      events.push({min:cm,team:'opp',icon:'❌',body:`Conversion missed — ${oc}`,pts:0,cls:'is-missed'});
+      events.push({min:m+0.5,team:'opp',icon:'❌',body:`Conversion missed — ${oc}`,pts:0,cls:'is-missed'});
     }
   }
-  // Penalty goals (0-2 per team)
-  const myPens=rand(0,2),oppPens=rand(0,2);
-  for(let i=0;i<myPens;i++) events.push({min:pickMin(),team:'me',icon:'🎯',body:`Penalty goal — ${FV.myConv}`,pts:2,cls:'is-penalty'});
-  for(let i=0;i<oppPens;i++) events.push({min:pickMin(),team:'opp',icon:'🎯',body:`Penalty goal — ${oc}`,pts:2,cls:'is-penalty'});
+  // Penalty goals — only winning team kicks them freely; losing team only in close games (1-try diff)
+  const tryMargin=Math.abs(g.myTr-g.oppTr);
+  const myPens=g.iWon?rand(0,2):(tryMargin<=1?rand(0,1):0);
+  const oppPens=!g.iWon?rand(0,2):(tryMargin<=1?rand(0,1):0);
+  for(let i=0;i<myPens;i++) events.push({min:pickPenMin(),team:'me',icon:'🎯',body:`Penalty goal — ${FV.myConv}`,pts:2,cls:'is-penalty'});
+  for(let i=0;i<oppPens;i++) events.push({min:pickPenMin(),team:'opp',icon:'🎯',body:`Penalty goal — ${oc}`,pts:2,cls:'is-penalty'});
 
   // Half time marker
   events.push({min:40,isHalftime:true});
@@ -5196,7 +5203,7 @@ function fvAppendEvent(ev){
   } else {
     div.className='fv-event'+(ev.team==='me'?' is-me':ev.team==='opp'?' is-opp':'')+(ev.cls?' '+ev.cls:'');
     const teamBadge=ev.team==='me'?myEmoji:ev.team==='opp'?oppEmoji:'';
-    div.innerHTML=`<span class="fv-event-min">${ev.min}'</span><span class="fv-event-icon">${ev.icon}</span><span class="fv-event-badge">${teamBadge}</span><div class="fv-event-body">${ev.body}</div>`;
+    div.innerHTML=`<span class="fv-event-min">${Math.ceil(ev.min)}'</span><span class="fv-event-icon">${ev.icon}</span><span class="fv-event-badge">${teamBadge}</span><div class="fv-event-body">${ev.body}</div>`;
     if(ev.team==='me') FV.myPts+=ev.pts||0;
     else if(ev.team==='opp') FV.oppPts+=ev.pts||0;
     document.getElementById('fvMyScore').textContent=FV.myPts;
@@ -5286,8 +5293,7 @@ function fvSim(){
   const g=FV.games[FV.idx];
   FV.events=fvGenerateEvents(g);
   FV.myPts=0;FV.oppPts=0;
-  // Show all events at once — append in reverse so newest ends up at top
-  [...FV.events].reverse().forEach(ev=>fvAppendEvent(ev));
+  FV.events.forEach(ev=>fvAppendEvent(ev));
   // Recalc score from scratch since reverse order messed up running total display
   let mp=0,op=0;
   FV.events.forEach(ev=>{if(ev.team==='me')mp+=ev.pts||0;else if(ev.team==='opp')op+=ev.pts||0;});
@@ -5303,10 +5309,9 @@ function fvSkipMatch(){
   const g=FV.games[FV.idx];
   // Use already-generated events if mid-watch, else generate fresh
   if(!FV.events.length){FV.events=fvGenerateEvents(g);FV.myPts=0;FV.oppPts=0;}
-  // Render all events instantly (newest at top) then recalc totals
   const feed=document.getElementById('fvFeed');
   feed.innerHTML='';
-  [...FV.events].reverse().forEach(ev=>fvAppendEvent(ev));
+  FV.events.forEach(ev=>fvAppendEvent(ev));
   let mp=0,op=0;
   FV.events.forEach(ev=>{if(ev.team==='me')mp+=ev.pts||0;else if(ev.team==='opp')op+=ev.pts||0;});
   FV.myPts=mp;FV.oppPts=op;
