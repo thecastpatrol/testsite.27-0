@@ -4820,9 +4820,9 @@ function buildFinalsBracket(f,ladder){
     const me=isMeT(t);
     const seed=seedOf[t.name]||'';
     const cls='bracket-team'+(won?' winner':' loser')+(me?' is-me':'');
-    const shortName=t.name.length>12?(t.name==='Manly Warringah Sea Eagles'?'Sea Eagles':t.name.split(' ').pop()):t.name;
+    const dispName=me?`⭐ ${myTeam()}`:`${fvEmoji(t.name)} ${fvShort(t.name)}`;
     const scoreBadge=tries!==undefined?`<span class="bracket-tries">${tries*6}</span>`:'';
-    return`<div class="${cls}"><span class="bracket-seed">${seed}</span><span class="bracket-name"${me?' style="color:inherit"':''}>${me?`⭐ ${myTeam()}`:shortName}</span>${scoreBadge}</div>`;
+    return`<div class="${cls}"><span class="bracket-seed">${seed}</span><span class="bracket-name"${me?' style="color:inherit"':''}>${dispName}</span>${scoreBadge}</div>`;
   }
   function gameHtml(g,isGF){
     const cls='bracket-game'+(isGF?' bracket-gf':'');
@@ -4838,8 +4838,8 @@ function buildFinalsBracket(f,ladder){
   function byeCard(t){
     const me=isMeT(t);
     const seed=seedOf[t.name]||'';
-    const shortName=t.name.length>12?(t.name==='Manly Warringah Sea Eagles'?'Sea Eagles':t.name.split(' ').pop()):t.name;
-    return`<div class="bracket-game" style="opacity:0.55"><div class="bracket-team${me?' is-me':''}" style="opacity:0.8"><span class="bracket-seed">${seed}</span><span class="bracket-name">${me?`⭐ ${myTeam()}`:shortName}</span></div><div style="text-align:center;font-size:9px;color:var(--muted);padding:4px 0;letter-spacing:.8px">— BYE —</div></div>`;
+    const dispName=me?`⭐ ${myTeam()}`:`${fvEmoji(t.name)} ${fvShort(t.name)}`;
+    return`<div class="bracket-game" style="opacity:0.55"><div class="bracket-team${me?' is-me':''}" style="opacity:0.8"><span class="bracket-seed">${seed}</span><span class="bracket-name">${dispName}</span></div><div style="text-align:center;font-size:9px;color:var(--muted);padding:4px 0;letter-spacing:.8px">— BYE —</div></div>`;
   }
 
   // 4 rounds: Week1 (QF+EF), Semi Finals, Preliminary Finals, Grand Final
@@ -4904,6 +4904,11 @@ function buildFinalsBracket(f,ladder){
 // ============================================================
 // FINALS MATCH VIEWER
 // ============================================================
+const TEAM_SHORT={'Penrith Panthers':'Panthers','Melbourne Storm':'Storm','Sydney Roosters':'Roosters','Brisbane Broncos':'Broncos','Manly Warringah Sea Eagles':'Sea Eagles','North Queensland Cowboys':'Cowboys','Cronulla-Sutherland Sharks':'Sharks','South Sydney Rabbitohs':'Rabbitohs','Canberra Raiders':'Raiders','NZ Warriors':'Warriors','Parramatta Eels':'Eels','Newcastle Knights':'Knights','Canterbury-Bankstown Bulldogs':'Bulldogs','Gold Coast Titans':'Titans','St. George Illawarra Dragons':'Dragons','Dolphins':'Dolphins','Wests Tigers':'Tigers'};
+const TEAM_EMOJI={'Penrith Panthers':'🐾','Melbourne Storm':'⚡','Sydney Roosters':'🐓','Brisbane Broncos':'🐴','Manly Warringah Sea Eagles':'🦅','North Queensland Cowboys':'🤠','Cronulla-Sutherland Sharks':'🦈','South Sydney Rabbitohs':'🐇','Canberra Raiders':'🥛','NZ Warriors':'🇳🇿','Parramatta Eels':'🐍','Newcastle Knights':'🏰','Canterbury-Bankstown Bulldogs':'🐶','Gold Coast Titans':'⚔️','St. George Illawarra Dragons':'🐉','Dolphins':'🐬','Wests Tigers':'🐯'};
+function fvShort(n){return TEAM_SHORT[n]||n.split(' ').pop();}
+function fvEmoji(n){return TEAM_EMOJI[n]||'';}
+function fvLabel(n){return fvEmoji(n)+' '+fvShort(n);}
 const FV_ROSTERS={
   "Penrith Panthers":{conv:"Nathan Cleary",players:[{n:"Dylan Edwards",p:"FB"},{n:"Brian To'o",p:"W"},{n:"Josh Mansour",p:"W"},{n:"Ryan Girdler",p:"C"},{n:"Paul Franze",p:"C"},{n:"Jamie Soward",p:"FE"},{n:"Nathan Cleary",p:"HB"},{n:"Brent Kite",p:"P"},{n:"Mitch Kenny",p:"HK"},{n:"Moses Leota",p:"P"},{n:"Liam Martin",p:"SR"},{n:"Trent Waterhouse",p:"SR"},{n:"Isaah Yeo",p:"LK"}]},
   "Melbourne Storm":{conv:"Cameron Smith",players:[{n:"Billy Slater",p:"FB"},{n:"Matt Geyer",p:"W"},{n:"Xavier Coates",p:"W"},{n:"Will Chambers",p:"C"},{n:"Matt King",p:"C"},{n:"Cameron Munster",p:"FE"},{n:"Jahrome Hughes",p:"HB"},{n:"Glenn Lazarus",p:"P"},{n:"Cameron Smith",p:"HK"},{n:"Robbie Kearns",p:"P"},{n:"Ryan Hoffman",p:"SR"},{n:"Eliesa Katoa",p:"SR"},{n:"Tawera Nikau",p:"LK"}]},
@@ -4984,8 +4989,8 @@ function fvRenderGame(){
   const g=FV.games[FV.idx];
   document.getElementById('fvRound').textContent=g.roundLabel+(g.roundLabel==='GRAND FINAL'?' 🏆':'');
   document.getElementById('fvMyName').textContent='⭐ '+myTeam();
-  document.getElementById('fvOppName').textContent=g.opp.name;
-  document.getElementById('fvOppLbl').textContent=g.opp.name.split(' ').slice(-1)[0];
+  document.getElementById('fvOppName').textContent=fvLabel(g.opp.name);
+  document.getElementById('fvOppLbl').textContent=fvShort(g.opp.name);
   document.getElementById('fvMyScore').textContent='0';
   document.getElementById('fvMyScore').className='fv-score-box';
   document.getElementById('fvOppScore').textContent='0';
@@ -5035,7 +5040,7 @@ function fvGenerateEvents(g){
     const m=pickMin();
     const scorer=fvPickMyScorer();
     const converted=Math.random()>0.18;
-    events.push({min:m,team:'me',icon:'🟡',body:`<strong>${scorer}</strong> scores for ${myTeam()}!`,pts:4});
+    events.push({min:m,team:'me',icon:'🟡',body:`<strong>${scorer}</strong> scores!`,pts:4});
     const cm=Math.min(m+1,79);
     if(converted){
       events.push({min:cm,team:'me',icon:'✅',body:`Conversion — ${FV.myConv}`,pts:2,cls:'is-convert'});
@@ -5049,7 +5054,7 @@ function fvGenerateEvents(g){
     const m=pickMin();
     const scorer=fvPickOppScorer(g.opp.name);
     const converted=Math.random()>0.18;
-    events.push({min:m,team:'opp',icon:'⚫',body:`<strong>${scorer}</strong> scores for ${g.opp.name}`,pts:4});
+    events.push({min:m,team:'opp',icon:'⚫',body:`<strong>${scorer}</strong> scores for ${fvShort(g.opp.name)}`,pts:4});
     const cm=Math.min(m+1,79);
     if(converted){
       events.push({min:cm,team:'opp',icon:'✅',body:`Conversion — ${oc}`,pts:2,cls:'is-convert'});
@@ -5103,7 +5108,7 @@ function fvShowResultPopup(g){
   const box=document.getElementById('fvResultBox');
   box.className='fv-result-box '+(g.iWon?'win':'loss');
   document.getElementById('fvResultVerdict').textContent=g.iWon?(g.roundLabel==='GRAND FINAL'?'🏆 PREMIERS!':'✅ WIN'):'❌ ELIMINATED';
-  document.getElementById('fvResultTeams').textContent=`${myTeam()} vs ${g.opp.name}`;
+  document.getElementById('fvResultTeams').textContent=`${myTeam()} vs ${fvShort(g.opp.name)}`;
   document.getElementById('fvResultScore').textContent=`${FV.myPts} – ${FV.oppPts}`;
   const btn=document.getElementById('fvResultNextBtn');
   btn.textContent=isLast?'View Season Results →':'Next Finals Match →';
@@ -5216,7 +5221,7 @@ function showResults() {
     heroEl.innerHTML=`<div class="result-hero"><div class="big-record">${totalW}-${totalL}</div><div class="result-meta-row"><div class="result-badge"><div class="result-badge-label">Ladder Finish</div><div class="result-badge-val rb-ladder">${ladderStr}</div></div><div class="result-badge"><div class="result-badge-label">Season Result</div><div class="result-badge-val" style="color:${finalsResultColor};font-size:${finalsResultSize}">${finalsResultText}</div></div></div><p class="narrative">${generateNarrative(s,f,total27_0,totalW)}</p></div>`;
   }
   const body=document.getElementById('resultsBody');body.innerHTML='';
-  body.innerHTML+=`<div style="margin-bottom:20px;text-align:center"><button class="btn" onclick="showShareCard()" style="width:100%;background:#22c55e;border-color:#16a34a;color:#fff;font-size:17px;font-weight:900;padding:16px 24px;letter-spacing:0.5px;box-shadow:0 4px 20px rgba(34,197,94,0.35);border-radius:12px">📸 Share Your Season</button></div>`;
+  body.innerHTML+=`<div style="margin-bottom:20px;display:flex;gap:10px"><button class="btn" onclick="showShareCard()" style="flex:1;background:#22c55e;border-color:#16a34a;color:#fff;font-size:15px;font-weight:900;padding:15px 10px;letter-spacing:0.4px;box-shadow:0 4px 20px rgba(34,197,94,0.35);border-radius:12px">📸 Share Your Season</button><button class="btn" onclick="resetGame()" style="flex:1;background:var(--card2);border:1px solid #444;color:var(--text);font-size:15px;font-weight:900;padding:15px 10px;letter-spacing:0.4px;border-radius:12px">🔄 Play Again</button></div>`;
   const finalsStatLabel=f.myTeamInFinals?'Finals':'Finals';
   const finalsStatVal=f.myTeamInFinals?`${finalsW}-${finalsL}`:'DNQ';
   body.innerHTML+=`<div class="results-section"><h3>📊 Season Summary</h3><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center"><div><div style="font-size:10px;color:var(--muted)">Regular Season</div><div style="font-size:20px;font-weight:900;color:var(--gold)">${s.wins}-${s.losses}</div></div><div><div style="font-size:10px;color:var(--muted)">Finals</div><div style="font-size:20px;font-weight:900;color:${f.myTeamInFinals?(f.isChampion?'var(--gold)':'#fff'):'var(--muted)'}">${finalsStatVal}</div></div><div><div style="font-size:10px;color:var(--muted)">Ladder Finish</div><div style="font-size:20px;font-weight:900">${s.myLadderPos}${ordinal(s.myLadderPos)}</div></div><div><div style="font-size:10px;color:var(--muted)">Pts For</div><div style="font-size:17px;font-weight:700">${s.pf}</div></div><div><div style="font-size:10px;color:var(--muted)">Pts Against</div><div style="font-size:17px;font-weight:700">${s.pa}</div></div><div><div style="font-size:10px;color:var(--muted)">Tries</div><div style="font-size:17px;font-weight:700;color:var(--gold)">${s.tries}</div></div></div></div>`;
@@ -5224,7 +5229,7 @@ function showResults() {
   const dm = getDallyMWinner(s, f);
   body.innerHTML+=`<div class="results-section"><h3>🏆 Finals Bracket</h3>${buildFinalsBracket(f,s.ladder)}</div>`;
   if(!f.myTeamInFinals){
-    body.querySelector('.results-section:last-of-type').insertAdjacentHTML('beforeend',`<p style="color:var(--muted);font-size:11px;margin-top:8px">Missed the finals (${s.myLadderPos}${ordinal(s.myLadderPos)}). ${f.champion?.name||''} won the premiership.</p>`);
+    body.querySelector('.results-section:last-of-type').insertAdjacentHTML('beforeend',`<p style="color:var(--muted);font-size:11px;margin-top:8px">Missed the finals (${s.myLadderPos}${ordinal(s.myLadderPos)}). ${f.champion?.name?fvLabel(f.champion.name)+' won the premiership.':''}</p>`);
   }
 
   // Regular Season Results collapsible
@@ -5249,8 +5254,9 @@ function showResults() {
     const bg=isMe?'background:rgba(241,192,115,0.12);':'';
     const border=pos===8?'border-bottom:2px solid var(--gold);':'';
     const diff=(t.pf||0)-(t.pa||0);
+    const teamDisp=isMe?`⭐ ${myTeam()}`:`${fvEmoji(t.name)} ${fvShort(t.name)}`;
     lh+=`<tr style="${bg}${border}text-align:center">`
-      +`<td style="text-align:left;padding:3px 5px;font-weight:${isMe?700:400}">${pos}. ${isMe?'⭐ ':''}${t.name}</td>`
+      +`<td style="text-align:left;padding:3px 5px;font-weight:${isMe?700:400}">${pos}. ${teamDisp}</td>`
       +`<td>${t.wins}</td><td>${24-t.wins}</td>`
       +`<td>${t.pf||'—'}</td><td>${t.pa||'—'}</td>`
       +`<td style="color:${diff>=0?'#22c55e':'#ef4444'}">${diff>=0?'+':''}${diff||'—'}</td>`
@@ -5262,7 +5268,7 @@ function showResults() {
   const topT=triesArr[0];const topA=[...triesArr].sort((a,b)=>b.assists-a.assists)[0];
   const dmTeamStr=dm?(dm.team===myTeam()?`⭐ ${myTeam()}`:dm.team):'';
   const dmCard=dm?`<div class="award-card" style="grid-column:1/-1;display:flex;align-items:center;gap:12px;text-align:left;padding:12px 14px"><div style="font-size:32px">🏅</div><div><div class="a-title" style="margin-bottom:3px">Dally M Medal — Season MVP</div><div class="a-name" style="font-size:15px">${dm.name}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">${dmTeamStr} · ${dm.pos}</div></div></div>`:'';
-  body.innerHTML+=`<div class="results-section"><h3>🌟 Season Awards</h3><div class="awards-grid">${dmCard}<div class="award-card"><div class="a-title">Your Top Try Scorer</div><div class="a-name">${STATE.team[topT?.slot]?.name||'—'}</div><div class="a-stat">${topT?.tries||0} tries</div></div><div class="award-card"><div class="a-title">Your Most Try Assists</div><div class="a-name">${STATE.team[topA?.slot]?.name||'—'}</div><div class="a-stat">${topA?.assists||0} assists</div></div><div class="award-card"><div class="a-title">Premiers</div><div class="a-name">${f.champion?.name||'—'}</div><div class="a-stat">2026 Champions</div></div><div class="award-card"><div class="a-title">Team Rating</div><div class="a-name">${s.rating}/100</div><div class="a-stat">${ratingLabel(s.rating)}</div></div></div></div>`;
+  body.innerHTML+=`<div class="results-section"><h3>🌟 Season Awards</h3><div class="awards-grid">${dmCard}<div class="award-card"><div class="a-title">Your Top Try Scorer</div><div class="a-name">${STATE.team[topT?.slot]?.name||'—'}</div><div class="a-stat">${topT?.tries||0} tries</div></div><div class="award-card"><div class="a-title">Your Most Try Assists</div><div class="a-name">${STATE.team[topA?.slot]?.name||'—'}</div><div class="a-stat">${topA?.assists||0} assists</div></div><div class="award-card"><div class="a-title">Premiers</div><div class="a-name">${f.champion?.name?fvLabel(f.champion.name):'—'}</div><div class="a-stat">2026 Champions</div></div><div class="award-card"><div class="a-title">Team Rating</div><div class="a-name">${s.rating}/100</div><div class="a-stat">${ratingLabel(s.rating)}</div></div></div></div>`;
   // Expanded Player Stats (moved to bottom)
   const extraStats=generateSeasonStats();
   // Sort by position slot order: FB, LW, LC, RC, RW, FE, HB, P1, HK, P2, SR1, SR2, LK
