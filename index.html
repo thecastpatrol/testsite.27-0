@@ -409,8 +409,8 @@ tr.tr-tribute .pst-name{color:#02702A!important;font-weight:900!important}
 .fv-btn-watch{background:var(--gold);color:#111}
 .fv-btn-pause{background:#555;color:#fff}
 .fv-btn-sim{background:#2563eb;color:#fff}
-.fv-btn-skip{background:var(--card2);color:var(--text);border:1px solid #3a3a4a}
-.fv-btn-skipall{background:transparent;color:var(--muted);border:1px solid #2a2a3a;font-size:9px}
+.fv-btn-skip{background:#0e7c5b;color:#fff;border:none}
+.fv-btn-skipall{background:#7f1d1d;color:#fca5a5;border:none;font-size:9px}
 /* ── Match card header ── */
 .fv-header{flex-shrink:0;background:linear-gradient(160deg,#111128 0%,#0d0d1f 100%);border-bottom:3px solid rgba(241,192,115,0.25);padding:0 12px 10px}
 @keyframes gfShimmer{0%{background-position:200% center}100%{background-position:-200% center}}
@@ -1400,7 +1400,7 @@ body {
     <button class="fv-btn fv-btn-watch" id="fvWatchBtn" onclick="fvWatchToggle()">▶ Watch Game</button>
     <button class="fv-btn fv-btn-sim" id="fvSimBtn" onclick="fvSim()">⚡ Sim Game</button>
     <button class="fv-btn fv-btn-skip" id="fvSkipBtn" onclick="fvSkipMatch()">⏭ Skip Match</button>
-    <button class="fv-btn fv-btn-skipall" id="fvSkipAllBtn" onclick="fvSkipFinals()">⏭⏭ Skip Finals</button>
+    <button class="fv-btn fv-btn-skipall" id="fvSkipAllBtn" onclick="fvConfirmSkipFinals()">⏭⏭ Skip Finals</button>
   </div>
   <div class="fv-header">
     <div class="fv-round-badge" id="fvRound">Finals</div>
@@ -1458,9 +1458,21 @@ body {
       <button class="fv-popup-btn primary" style="font-size:15px;padding:13px" onclick="fvChoose('watch')">▶ Watch Game</button>
       <button class="fv-popup-btn" style="background:#3b5bdb;color:#fff;font-size:15px;padding:13px" onclick="fvChoose('sim')">⚡ Sim Game</button>
       <div style="display:flex;gap:8px">
-        <button class="fv-popup-btn" style="flex:1;background:#333;color:#fff;font-size:13px;padding:11px" onclick="fvChoose('skip')">⏭ Skip Match</button>
-        <button class="fv-popup-btn" style="flex:1;background:#222;color:#888;font-size:13px;padding:11px;border:1px solid #444" onclick="fvChoose('skipall')">⏭⏭ Skip Finals</button>
+        <button class="fv-popup-btn" style="flex:1;background:#0e7c5b;color:#fff;font-size:13px;padding:11px" onclick="fvChoose('skip')">⏭ Skip Match</button>
+        <button class="fv-popup-btn" style="flex:1;background:#7f1d1d;color:#fca5a5;font-size:13px;padding:11px" onclick="fvConfirmSkipFinals()">⏭⏭ Skip Finals</button>
       </div>
+    </div>
+  </div>
+</div>
+<!-- Skip Finals confirm popup -->
+<div class="fv-overlay" id="fvSkipFinalsConfirm" style="display:none;z-index:9200">
+  <div class="fv-popup" style="max-width:300px;text-align:center">
+    <div class="fv-popup-icon">⚠️</div>
+    <div class="fv-popup-title" style="font-size:18px">Skip All Finals?</div>
+    <div class="fv-popup-sub" style="color:#ccc;margin-bottom:20px">This will skip straight to your season results. You can't undo this.</div>
+    <div style="display:flex;gap:10px">
+      <button class="fv-popup-btn" style="flex:1;background:#7f1d1d;color:#fca5a5;font-size:14px;padding:12px" onclick="fvConfirmSkipFinalsYes()">Yes, Skip</button>
+      <button class="fv-popup-btn" style="flex:1;background:#1e293b;color:#fff;font-size:14px;padding:12px" onclick="fvConfirmSkipFinalsNo()">Cancel</button>
     </div>
   </div>
 </div>
@@ -5322,6 +5334,18 @@ function fvSkipMatch(){
   fvShowResultPopup(g);
 }
 
+function fvConfirmSkipFinals(){
+  document.getElementById('fvChoosePopup').style.display='none';
+  document.getElementById('fvSkipFinalsConfirm').style.display='flex';
+}
+function fvConfirmSkipFinalsYes(){
+  document.getElementById('fvSkipFinalsConfirm').style.display='none';
+  fvSkipFinals();
+}
+function fvConfirmSkipFinalsNo(){
+  document.getElementById('fvSkipFinalsConfirm').style.display='none';
+  document.getElementById('fvChoosePopup').style.display='flex';
+}
 function fvSkipFinals(){
   if(FV.timer){clearInterval(FV.timer);FV.timer=null;}
   const fn=document.getElementById('fvFloatNext');if(fn)fn.remove();
