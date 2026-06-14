@@ -427,15 +427,17 @@ tr.tr-tribute .pst-name{color:#02702A!important;font-weight:900!important}
 .fv-feed{flex:1;overflow-y:auto;padding:6px 12px;display:flex;flex-direction:column}
 .fv-feed-prompt{color:var(--muted);font-size:11px;text-align:center;padding:20px 0;font-style:italic;flex-shrink:0}
 .fv-event{display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid #1a1a28;flex-shrink:0}
-.fv-event-min{font-size:9px;color:var(--muted);font-weight:700;min-width:26px;padding-top:2px;flex-shrink:0}
+.fv-event-min{font-size:9px;color:#aaa;font-weight:700;min-width:26px;padding-top:2px;flex-shrink:0}
 .fv-event-icon{font-size:13px;flex-shrink:0;width:18px;text-align:center;padding-top:1px}
-.fv-event-body{flex:1;font-size:12px;line-height:1.35;min-width:0}
+.fv-event-body{flex:1;font-size:12px;line-height:1.35;min-width:0;color:#e0e0e0}
 .fv-event-body strong{font-weight:800}
 .fv-event.is-me .fv-event-body strong{color:#f1c073}
-.fv-event.is-opp .fv-event-body strong{color:#ccc}
-.fv-event.is-convert .fv-event-body{color:var(--muted);font-size:11px}
-.fv-event.is-missed .fv-event-body{color:#664444;font-size:11px}
-.fv-event.is-penalty .fv-event-body{color:#9988aa;font-size:11px}
+.fv-event.is-opp .fv-event-body strong{color:#fff}
+.fv-event.is-convert .fv-event-body{color:#bbb;font-size:11px}
+.fv-event.is-missed .fv-event-body{color:#e08080;font-size:11px}
+.fv-event.is-penalty .fv-event-body{color:#ddd;font-size:11px}
+.fv-score-box.leading{color:#22c55e}
+.fv-score-box.trailing{color:#ef4444}
 .fv-event.is-halftime{justify-content:center;padding:8px 0;border-bottom:1px solid #2a2a3a}
 .fv-event.is-halftime .fv-event-body{text-align:center;font-size:9px;color:#444;letter-spacing:1.5px;text-transform:uppercase;font-weight:700}
 /* Made Finals popup */
@@ -5073,11 +5075,22 @@ function fvGenerateEvents(g){
   return events;
 }
 
+function fvLiveScoreColour(){
+  const myEl=document.getElementById('fvMyScore');
+  const opEl=document.getElementById('fvOppScore');
+  if(FV.myPts>FV.oppPts){myEl.className='fv-score-box leading';opEl.className='fv-score-box trailing';}
+  else if(FV.oppPts>FV.myPts){myEl.className='fv-score-box trailing';opEl.className='fv-score-box leading';}
+  else{myEl.className='fv-score-box';opEl.className='fv-score-box';}
+}
+
 function fvAppendEvent(ev){
   const feed=document.getElementById('fvFeed');
-  // Remove prompt if still there
   const prompt=feed.querySelector('.fv-feed-prompt');
   if(prompt) prompt.remove();
+
+  const g=FV.games[FV.idx];
+  const myEmoji='⭐';
+  const oppEmoji=fvEmoji(g.opp.name)||'⚫';
 
   const div=document.createElement('div');
   if(ev.isHalftime){
@@ -5085,13 +5098,15 @@ function fvAppendEvent(ev){
     div.innerHTML='<div class="fv-event-body">— HALF TIME —</div>';
   } else {
     div.className='fv-event'+(ev.team==='me'?' is-me':ev.team==='opp'?' is-opp':'')+(ev.cls?' '+ev.cls:'');
-    div.innerHTML=`<span class="fv-event-min">${ev.min}'</span><span class="fv-event-icon">${ev.icon}</span><div class="fv-event-body">${ev.body}</div>`;
+    const teamBadge=ev.team==='me'?`<span style="margin-right:4px">${myEmoji}</span>`
+                   :ev.team==='opp'?`<span style="margin-right:4px">${oppEmoji}</span>`:'';
+    div.innerHTML=`<span class="fv-event-min">${ev.min}'</span><span class="fv-event-icon">${ev.icon}</span><div class="fv-event-body">${teamBadge}${ev.body}</div>`;
     if(ev.team==='me') FV.myPts+=ev.pts||0;
     else if(ev.team==='opp') FV.oppPts+=ev.pts||0;
     document.getElementById('fvMyScore').textContent=FV.myPts;
     document.getElementById('fvOppScore').textContent=FV.oppPts;
+    if(ev.pts) fvLiveScoreColour();
   }
-  // Prepend so newest is at top
   feed.insertBefore(div,feed.firstChild);
 }
 
@@ -5116,6 +5131,7 @@ function fvShowResultPopup(g){
   btn.style.background=g.iWon?'':'#ef4444';btn.style.color=g.iWon?'':'#fff';
   document.getElementById('fvResultPopup').style.display='flex';
   ['fvWatchBtn','fvSimBtn','fvSkipBtn'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=true;});
+  fvLiveScoreColour();
 }
 
 function fvCloseResultPopup(){
@@ -5133,7 +5149,8 @@ function fvCloseResultPopup(){
 
 function fvWatch(){
   if(FV.timer){clearInterval(FV.timer);FV.timer=null;}
-  ['fvWatchBtn','fvSimBtn','fvSkipBtn'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=true;});
+  // Keep Skip Match enabled mid-game so users can bail out early
+  ['fvWatchBtn','fvSimBtn'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=true;});
   const g=FV.games[FV.idx];
   FV.events=fvGenerateEvents(g);
   FV.myPts=0;FV.oppPts=0;
@@ -5776,49 +5793,6 @@ window.addEventListener('pageshow', function(e){
 </script>
 
 
-<!-- Jai Arrow tribute popup -->
-<style>
-#arrowModal{display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.78);align-items:center;justify-content:center;padding:20px;box-sizing:border-box}
-#arrowModal.open{display:flex}
-.am-sheet{background:#0a1a0d;border:2px solid rgba(255,255,255,0.3);border-radius:20px;max-width:380px;width:100%;padding:28px 24px 24px;box-sizing:border-box;text-align:center;box-shadow:0 0 40px rgba(255,255,255,0.15),0 0 80px rgba(2,112,42,0.3);position:relative}
-.am-circle{width:100px;height:100px;border-radius:50%;border:3px solid rgba(255,255,255,0.9);background:rgba(255,255,255,0.1);box-shadow:0 0 24px rgba(255,255,255,0.6),0 0 8px rgba(255,255,255,0.3);display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0 auto 18px}
-.am-circle-name{font-size:11px;font-weight:800;color:#72BE8F;letter-spacing:.5px}
-.am-circle-rating{font-size:32px;font-weight:900;background:linear-gradient(135deg,#72BE8F,#ffffff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1}
-.am-circle-pos{font-size:9px;font-weight:800;background:#02702A;color:#fff;border-radius:4px;padding:2px 6px;margin-top:3px}
-.am-limited{font-size:10px;font-weight:800;letter-spacing:2px;color:#72BE8F;text-transform:uppercase;margin-bottom:10px}
-.am-title{font-size:18px;font-weight:900;color:#fff;line-height:1.3;margin-bottom:10px}
-.am-title span{color:#72BE8F}
-.am-body{font-size:13px;color:#aaa;line-height:1.5;margin-bottom:8px}
-.am-royalty{font-size:11px;color:#72BE8F;font-style:italic;margin-bottom:20px}
-.am-jersey-btn{display:block;width:100%;padding:14px;border-radius:12px;background:linear-gradient(135deg,#72BE8F,#02702A);border:none;color:#fff;font-size:15px;font-weight:900;cursor:pointer;text-decoration:none;margin-bottom:10px;letter-spacing:.3px}
-.am-dismiss{background:none;border:1px solid #333;border-radius:10px;color:#aaa;font-size:14px;font-weight:700;cursor:pointer;padding:11px;width:100%}
-.am-dismiss:hover{color:#fff;border-color:#555}
-.am-close{position:absolute;top:12px;right:14px;background:rgba(255,255,255,0.15);border:1.5px solid rgba(255,255,255,0.4);border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;cursor:pointer;font-weight:700}
-.am-close:hover{background:rgba(255,255,255,0.25)}
-</style>
-<div id="arrowModal">
-  <div class="am-sheet">
-    <button class="am-close" onclick="arrowModalDismiss()">✕</button>
-    <div class="am-circle">
-      <div class="am-circle-name">Arrow</div>
-      <div class="am-circle-rating">99</div>
-      <div class="am-circle-pos">SSR</div>
-    </div>
-    <div class="am-limited">⭐ Limited Time</div>
-    <div class="am-title">We love the way the Rugby League community supported <span>Jai Arrow</span></div>
-    <div class="am-body">We've made Jai Arrow 99 rated for a limited time only. He's in the game. Go find him.</div>
-    <div class="am-royalty">Profits and royalties from the jersey go directly to Jai Arrow and his family.</div>
-    <a class="am-jersey-btn" href="https://www.rabbitohs.com.au/shop/arrow-jersey/" target="_blank" rel="noopener" onclick="if(typeof gtag!=='undefined')gtag('event','arrow_jersey_click',{event_category:'tribute',event_label:'jai_arrow_popup',transport_type:'beacon'})">🏉 Support Jai & Purchase a Jersey</a>
-    <button class="am-dismiss" onclick="arrowModalDismiss()">Play Now</button>
-  </div>
-</div>
-<script>
-function arrowModalDismiss(){document.getElementById('arrowModal').classList.remove('open');}
-if(!sessionStorage.getItem('arrowModalSeen')){
-  sessionStorage.setItem('arrowModalSeen','1');
-  window.addEventListener('load',()=>setTimeout(()=>{document.getElementById('arrowModal').classList.add('open');setTimeout(arrowModalDismiss,8000);},600));
-}
-</script>
 
 <div id="shareModal" onclick="if(event.target===this)smClose()">
   <div class="sm-sheet">
