@@ -413,7 +413,7 @@ tr.tr-tribute .pst-name{color:#02702A!important;font-weight:900!important}
 .fv-btn-skipall{background:transparent;color:var(--muted);border:1px solid #2a2a3a;font-size:9px}
 /* ── Match card header ── */
 .fv-header{flex-shrink:0;background:linear-gradient(160deg,#111128 0%,#0d0d1f 100%);border-bottom:3px solid rgba(241,192,115,0.25);padding:0 12px 10px}
-.fv-round-badge{display:block;width:100%;font-size:11px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:#111;background:var(--gold);text-align:center;padding:6px 0;margin-bottom:10px;border-radius:0}
+.fv-round-badge{display:block;font-size:11px;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:#111;background:linear-gradient(90deg,#c8952a 0%,#f1c073 45%,#e8b55a 100%);text-align:center;padding:8px 0;margin:0 -12px 12px;border-radius:0;box-shadow:0 2px 8px rgba(241,192,115,0.25)}
 .fv-match-card{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px}
 .fv-match-team{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:0}
 .fv-match-team.right{align-items:flex-end}
@@ -432,11 +432,11 @@ tr.tr-tribute .pst-name{color:#02702A!important;font-weight:900!important}
 .fv-score-vs{font-size:9px;color:var(--muted);font-weight:700;letter-spacing:.8px;text-transform:uppercase}
 .fv-feed{flex:1;overflow-y:auto;padding:6px 12px;display:flex;flex-direction:column}
 .fv-feed-prompt{color:var(--muted);font-size:11px;text-align:center;padding:20px 0;font-style:italic;flex-shrink:0}
-.fv-event{display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid #1a1a28;flex-shrink:0}
-.fv-event-min{font-size:9px;color:#aaa;font-weight:700;min-width:26px;padding-top:2px;flex-shrink:0}
-.fv-event-icon{font-size:13px;flex-shrink:0;width:18px;text-align:center;padding-top:1px}
-.fv-event-badge{font-size:14px;flex-shrink:0;width:20px;text-align:center;line-height:1}
-.fv-event-body{flex:1;font-size:12px;line-height:1.35;min-width:0;color:#e0e0e0}
+.fv-event{display:flex;align-items:center;gap:0;padding:7px 0;border-bottom:1px solid #1a1a28;flex-shrink:0}
+.fv-event-min{font-size:10px;color:#888;font-weight:700;width:32px;flex-shrink:0;text-align:right;padding-right:8px}
+.fv-event-icon{font-size:15px;flex-shrink:0;width:24px;text-align:center}
+.fv-event-badge{font-size:16px;flex-shrink:0;width:26px;text-align:center;line-height:1}
+.fv-event-body{flex:1;font-size:12.5px;line-height:1.3;min-width:0;color:#e0e0e0;padding-left:4px}
 .fv-event-body strong{font-weight:800}
 .fv-event.is-me .fv-event-body strong{color:#f1c073}
 .fv-event.is-opp .fv-event-body strong{color:#fff}
@@ -5122,7 +5122,7 @@ function fvGenerateEvents(g){
     const m=pickMin();
     const scorer=fvPickMyScorer();
     const converted=Math.random()>0.18;
-    events.push({min:m,team:'me',icon:'🟡',body:`<strong>${scorer}</strong> scores!`,pts:4});
+    events.push({min:m,team:'me',icon:'🏉',body:`<strong>${scorer}</strong> scores!`,pts:4});
     const cm=Math.min(m+1,79);
     if(converted){
       events.push({min:cm,team:'me',icon:'✅',body:`Conversion — ${FV.myConv}`,pts:2,cls:'is-convert'});
@@ -5136,7 +5136,7 @@ function fvGenerateEvents(g){
     const m=pickMin();
     const scorer=fvPickOppScorer(g.opp.name);
     const converted=Math.random()>0.18;
-    events.push({min:m,team:'opp',icon:'⚫',body:`<strong>${scorer}</strong> scores for ${fvShort(g.opp.name)}`,pts:4});
+    events.push({min:m,team:'opp',icon:'🏉',body:`<strong>${scorer}</strong> scores for ${fvShort(g.opp.name)}`,pts:4});
     const cm=Math.min(m+1,79);
     if(converted){
       events.push({min:cm,team:'opp',icon:'✅',body:`Conversion — ${oc}`,pts:2,cls:'is-convert'});
@@ -5151,6 +5151,23 @@ function fvGenerateEvents(g){
 
   // Half time marker
   events.push({min:40,isHalftime:true});
+  events.sort((a,b)=>a.min-b.min||(a.isHalftime?-1:b.isHalftime?1:0));
+
+  // Ensure cosmetic score winner matches engine outcome
+  let myP=0,oppP=0;
+  events.forEach(ev=>{if(ev.team==='me')myP+=ev.pts||0;else if(ev.team==='opp')oppP+=ev.pts||0;});
+  if(g.iWon){
+    while(myP<=oppP){
+      events.push({min:rand(60,79),team:'me',icon:'🎯',body:`Penalty goal — ${FV.myConv}`,pts:2,cls:'is-penalty'});
+      myP+=2;
+    }
+  } else {
+    const oc2=fvOppConv(g.opp.name);
+    while(oppP<=myP){
+      events.push({min:rand(60,79),team:'opp',icon:'🎯',body:`Penalty goal — ${oc2}`,pts:2,cls:'is-penalty'});
+      oppP+=2;
+    }
+  }
   events.sort((a,b)=>a.min-b.min||(a.isHalftime?-1:b.isHalftime?1:0));
   return events;
 }
@@ -5284,12 +5301,17 @@ function fvSkipMatch(){
   if(FV.timer){clearInterval(FV.timer);FV.timer=null;}
   FV.paused=false;
   const g=FV.games[FV.idx];
-  // Use already-generated events if we're mid-watch, otherwise generate fresh
-  const events=FV.events.length?FV.events:fvGenerateEvents(g);
-  FV.myPts=0;FV.oppPts=0;
-  events.forEach(ev=>{if(ev.team==='me')FV.myPts+=ev.pts||0;else if(ev.team==='opp')FV.oppPts+=ev.pts||0;});
-  document.getElementById('fvMyScore').textContent=FV.myPts;
-  document.getElementById('fvOppScore').textContent=FV.oppPts;
+  // Use already-generated events if mid-watch, else generate fresh
+  if(!FV.events.length){FV.events=fvGenerateEvents(g);FV.myPts=0;FV.oppPts=0;}
+  // Render all events instantly (newest at top) then recalc totals
+  const feed=document.getElementById('fvFeed');
+  feed.innerHTML='';
+  [...FV.events].reverse().forEach(ev=>fvAppendEvent(ev));
+  let mp=0,op=0;
+  FV.events.forEach(ev=>{if(ev.team==='me')mp+=ev.pts||0;else if(ev.team==='opp')op+=ev.pts||0;});
+  FV.myPts=mp;FV.oppPts=op;
+  document.getElementById('fvMyScore').textContent=mp;
+  document.getElementById('fvOppScore').textContent=op;
   const btn=document.getElementById('fvWatchBtn');
   if(btn){btn.textContent='▶ Watch Game';btn.classList.remove('fv-btn-pause');btn.classList.add('fv-btn-watch');}
   fvShowResultPopup(g);
