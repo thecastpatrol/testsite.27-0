@@ -435,6 +435,7 @@ tr.tr-tribute .pst-name{color:#02702A!important;font-weight:900!important}
 .fv-event{display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid #1a1a28;flex-shrink:0}
 .fv-event-min{font-size:9px;color:#aaa;font-weight:700;min-width:26px;padding-top:2px;flex-shrink:0}
 .fv-event-icon{font-size:13px;flex-shrink:0;width:18px;text-align:center;padding-top:1px}
+.fv-event-badge{font-size:14px;flex-shrink:0;width:20px;text-align:center;line-height:1}
 .fv-event-body{flex:1;font-size:12px;line-height:1.35;min-width:0;color:#e0e0e0}
 .fv-event-body strong{font-weight:800}
 .fv-event.is-me .fv-event-body strong{color:#f1c073}
@@ -467,7 +468,7 @@ tr.tr-tribute .pst-name{color:#02702A!important;font-weight:900!important}
 .fv-result-teams{font-size:12px;color:var(--muted);margin-bottom:4px}
 .fv-result-final-score{font-size:32px;font-weight:900;font-family:'Lilita One',cursive;color:var(--text);margin-bottom:16px;line-height:1}
 /* Floating next button when popup is closed */
-.fv-float-next{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:8000;padding:12px 28px;border-radius:10px;border:none;font-size:13px;font-weight:800;cursor:pointer;letter-spacing:.4px;box-shadow:0 4px 20px rgba(0,0,0,.6);white-space:nowrap}
+.fv-float-next{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:8000;padding:16px 40px;border-radius:12px;border:none;font-size:17px;font-weight:800;cursor:pointer;letter-spacing:.4px;box-shadow:0 4px 24px rgba(0,0,0,.7);white-space:nowrap}
 .fv-float-next.win{background:#22c55e;color:#111}
 .fv-float-next.loss{background:#ef4444;color:#fff}
 #results{padding:16px;align-items:center;overflow-y:auto}#squad-complete>.header,#results>.header{align-self:stretch;margin:-16px -16px 0}
@@ -1441,6 +1442,22 @@ body {
     <div id="fvMFLadder" style="background:#0e0e1a;border-radius:8px;padding:6px 8px;margin-bottom:14px;font-size:11px"></div>
     <div class="fv-popup-sub" style="color:#ccc;font-size:12px;margin-bottom:12px" id="fvMFSub">Time to go all the way.</div>
     <button class="fv-popup-btn primary" onclick="fvDismissMadeFinalsPopup()">Proceed to Finals 🏆</button>
+  </div>
+</div>
+<!-- Choose How to Watch popup -->
+<div class="fv-overlay" id="fvChoosePopup" style="display:none">
+  <div class="fv-popup" style="max-width:320px">
+    <div class="fv-popup-icon" id="fvChooseEmoji">🏉</div>
+    <div class="fv-popup-title" id="fvChooseTitle">Finals Week 1</div>
+    <div class="fv-popup-sub" id="fvChooseSub" style="color:#ccc;margin-bottom:18px"></div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <button class="fv-popup-btn primary" style="font-size:15px;padding:13px" onclick="fvChoose('watch')">▶ Watch Game</button>
+      <button class="fv-popup-btn" style="background:#3b5bdb;color:#fff;font-size:15px;padding:13px" onclick="fvChoose('sim')">⚡ Sim Game</button>
+      <div style="display:flex;gap:8px">
+        <button class="fv-popup-btn" style="flex:1;background:#333;color:#fff;font-size:13px;padding:11px" onclick="fvChoose('skip')">⏭ Skip Match</button>
+        <button class="fv-popup-btn" style="flex:1;background:#222;color:#888;font-size:13px;padding:11px;border:1px solid #444" onclick="fvChoose('skipall')">⏭⏭ Skip Finals</button>
+      </div>
+    </div>
   </div>
 </div>
 <!-- Match Result popup -->
@@ -4964,14 +4981,25 @@ function launchFinalsViewer(){
   fvShowMadeFinalsPopup();
 }
 
+const GOAL_KICKER_RANK={"Cameron Smith":1296,"Adam Reynolds":1139,"Johnathan Thurston":923,"Jarrod Croker":916,"Hazem El Masri":894,"James Maloney":772,"Craig Fitzgibbon":718,"Nathan Cleary":717,"Michael Gordon":684,"Andrew Johns":660,"Luke Burt":647,"Clinton Schifcofske":612,"Matt Orford":598,"Corey Parker":586,"Shaun Johnson":559,"Mitchell Moses":558,"Jamie Lyon":534,"Jamie Soward":521,"Jamayne Isaako":508,"Reuben Garrick":492,"Kurt Gidley":456,"Brett Hodgson":454,"Valentine Holmes":450,"Luke Covell":421,"Benji Marshall":417,"Gareth Widdop":417,"Latrell Mitchell":405,"Michael De Vere":403,"Scott Prince":392,"Nicho Hynes":387,"Ryan Girdler":376,"Zac Lomax":368,"Nick Meaney":357,"Josh Hannay":347,"Ivan Cleary":336,"Jason Taylor":334,"Chris Sandow":332,"Ben Walker":298,"Daryl Halligan":295,"Jamal Fogarty":295,"Trent Hodkinson":294,"Todd Carney":289,"Preston Campbell":279,"Mat Rogers":271,"Sam Walker":261,"Michael Witt":258,"Darren Lockyer":256,"Kalyn Ponga":254,"Joel Caine":249,"Tyrone Roberts":244,"Wayne Bartrim":229,"Mark Riddell":226,"Matt Burton":223,"Luke Williamson":215,"Issac Luke":214,"Daly Cherry-Evans":211,"Aidan Sezer":203,"Julian O'Neill":202,"Brett Kimmorley":196,"Jordan Kahu":187,"Chad Townsend":186,"Kyle Flanagan":185,"Adam Doueihi":184,"Stacey Jones":183,"Ryan Papenhuyzen":168,"Clinton Gutherson":157,"Luke Walsh":154,"Moses Mbye":141,"Bryson Goodwin":138,"Tanah Boyd":137,"Krisnan Inu":135,"Stephen Crichton":135,"Andrew Walker":134,"Ash Taylor":130,"Joe Williams":128,"Reece Walsh":126,"Braith Anasta":125,"Terry Campese":124,"Pat Richards":123,"David Furner":122,"Tony Martin":120,"Michael Ennis":118,"Matt Geyer":117,"Wes Naiqama":111,"Amos Roberts":108,"Scott Drinkwater":106,"Jayden Campbell":106,"Tasesa Lavea":102,"Peter Wallace":98,"Aaron Gorrell":96,"Mathew Head":96,"Esan Marsters":96,"Braydon Trindall":94,"Chris Hicks":92,"Apisai Koroisau":91,"Jason Ferris":89,"Luke Phillips":85,"Matthew Ridge":85,"Kerrod Holland":83,"Steve Turner":80,"Jackson Hastings":80,"Michael Crocker":79,"Jake Clifford":78,"Ethan Lowe":77,"John Williams":75,"Kodi Nikorima":75,"Joseph-Aukuso Sua'Ali'I":75,"Kotoni Staggs":74,"Tui Lolohea":72,"Siosiua Taukeiaho":72,"Justin Smith":71,"Lance Hohaia":70,"Shannon Nevin":69,"Daniel Abraham":67,"Sandon Smith":67,"Blake Taaffe":66,"Mason Lino":65,"John Simon":64,"Craig Smith":63,"Chanel Harris-Tavita":63,"Brett Seymour":56,"Michael Dobson":56,"Cameron Munster":55,"Luke Metcalf":55,"Toby Sexton":54,"Matthew Wright":53,"Adam Pompey":52,"Matt Gafa":51,"Anthony Milford":50,"Chris Walker":49,"Rhyse Martin":49,"Graham Appo":48,"Corey Norman":47,"Dane Gagai":47,"Kyle Feldt":47,"Sam Williams":47,"Brett Delaney":46,"Jarrod Sammut":46,"Matt Bowen":45,"Nathan Merritt":45,"Adam Keighran":45,"Travis Burns":43,"Dylan Walker":43,"Dylan Edwards":43,"Mitch Healey":42,"Owen Craigie":40,"Bill Peden":39,"Jake Averillo":39,"Adam Brown":38,"Josh Dugan":38,"Jordan Rapana":38,"Ben Hunt":37,"Chase Stanley":36,"Jarrad Anderson":35,"Justin Holbrook":34,"Mark Gasnier":34,"Greg Bird":34,"Sione Faumuina":34,"Tim Lafai":34,"Matt Moylan":34,"Brandon Wakeham":34,"Paul Alamoti":34,"Graham Mackay":33,"Rod Wishart":32,"Brad Watts":32,"Noel Goldthorpe":31,"Blaine Stanley":31,"Craig Field":30,"Matt Hilder":30,"Brock Lamb":30,"Brent Webb":29,"Ashley Graham":28,"Jordan Rankin":28,"Brendon Reeves":27,"Shane Rodney":27,"Steve Matai":27,"Kevin Locke":27,"Blake Ferguson":26,"Paul Momirovski":26,"Lachlan Miller":26,"Ken Sio":25,"Luke Brooks":25,"Greg Bourke":24,"Glenn Morrison":24,"Scott Mclean":24,"Kane Elgey":24,"Brad Schneider":24,"Sean Russell":24,"Gene Ngamu":22,"Nathan Stapleton":22,"Daniel Mortimer":22,"Trent Leis":21,"Denan Kemp":21,"Tex Hoy":21,"Ben Hornby":20,"Jack Cogger":20,"Andrew Leeds":19,"Lote Tuqiri":19,"Scott Dureau":19,"Patrick Herbert":19,"Blake Austin":18,"Reece Robinson":18,"Cody Walker":18,"Mitchell Barnett":18,"Jamie Humphreys":18,"Nathan Blacklock":17,"Cory Paterson":17,"Joseph Tomane":17,"Scott Porter":17,"Damien Cook":17,"Daejarn Asi":17,"Tyran Wishart":17,"Simon Forrest":16,"Dean Collis":16,"Lachlan Coote":16,"Kyle Stanley":16,"Kevin Gordon":16,"George Williams":16,"Richard Swain":15,"Greg Inglis":15,"Nick Youngquest":15,"Joseph Paulo":15,"Dean Hawkins":15,"Leo Dynevor":14,"Brad Mackay":14,"Carl Doherty":14,"Brad Fittler":14,"Luke Kelly":14,"Herbie Farnworth":14,"Daniel Atkinson":14,"Brian Kelly":14,"Lee Murphy":13,"Brett Warton":13,"Ben Reynolds":13,"Brent Sherwin":13,"Thomas Weaver":13,"Kaeo Weekes":13,"Ben Ikin":12,"Brett Firman":12,"PJ Marsh":12,"John Morris":12,"Robbie Farah":12,"Tohu Harris":12,"Brodie Croft":12,"Aaron Schoupp":12,"Brandon Costin":11,"Travis Baker":11,"Lance Thompson":11,"Joel Monaghan":11,"Luke Young":11,"Daniel Holdsworth":11,"Nathan Gardner":11,"Beau Henry":11,"Jarome Luai":11,"Jack Bird":11,"Jock Madden":11,"Ashton Ward":11,"Scott Thorburn":10,"Darrell Trindall":10,"Phil Graham":10,"David Williams":10,"Jake Mullaney":10,"Kieran Foran":10,"Kurt Falls":10,"Luke Keary":10,"Adam Dykes":9,"Ben Jeffries":9,"Brett Sheehan":9,"Matt Riddle":9,"Tim Smith":9,"Patrick Ah Van":9,"Feleti Mateo":9,"Fletcher Myers":9,"Alf Duncan":8,"Michael Buettner":8,"Brad Drew":8,"Jason Moodie":8,"Israel Folau":8,"Ben Roberts":8,"Jayden Sullivan":8,"Hugo Savala":8,"Isaiah Tass":8,"Greg Alexander":7,"Michael Withers":7,"Ryan Cross":7,"Robbie O'Davis":7,"Marty Turner":7,"Dean Byrne":7,"Willie Peters":7,"John Sutton":7,"Marc Herbert":7,"Chris Lawrence":7,"Gavin Cooper":7,"Robert Lui":7,"Peta Hiku":7,"Adam Elliott":7,"Jai Field":7,"Tyrone Peachey":7,"Adam Cook":7,"Keano Kini":7,"Zac Laybutt":7,"Ben Lythe":6,"David Mulhall":6,"Luke Milton":6,"Dane Campbell":6,"Reegan Tanner":6,"Cooper Cronk":6,"Josh Mantellato":6,"Curtis Sironen":6,"Tyson Gamble":6,"Tyson Smoothy":6,"Jonah Pezet":6,"John Doyle":5,"Craig Gower":5,"Craig Kimmorley":5,"Scott Pethybridge":5,"Leo Clarke":5,"Beau Champion":5,"Shannon Gallant":5,"Shaun Kenny-Dowall":5,"Ben Henry":5,"Will Smith":5,"Mawene Hiroti":5,"Selwyn Cobbo":5,"James Tedesco":5,"Josh Rogers":5,"Bayleigh Bentley-Hape":5,"Ethan Strange":5};
+
 function fvFindMyConv(){
+  // Find the player on user's team with the most career goals in the database
+  let best=null, bestGoals=-1;
+  STATE.team.forEach(p=>{
+    if(!p) return;
+    const g=GOAL_KICKER_RANK[p.name]||0;
+    if(g>bestGoals){bestGoals=g;best=p.name;}
+  });
+  if(best) return best;
+  // Fallback: positional priority
   for(const pos of['HB','FE','FB','C']){
     const s=SLOTS.find(sl=>sl.type===pos&&STATE.team[sl.i]);
     if(s) return STATE.team[s.i].name;
   }
-  let best=null;
-  STATE.team.forEach(p=>{if(p&&(!best||p.rating>best.rating))best=p;});
-  return best?best.name:'';
+  let fb=null;
+  STATE.team.forEach(p=>{if(p&&(!fb||p.rating>fb.rating))fb=p;});
+  return fb?fb.name:'';
 }
 
 function fvGetUserGames(f){
@@ -5025,7 +5053,7 @@ function fvRenderGame(){
 
   const g=FV.games[FV.idx];
   document.getElementById('fvRound').textContent=g.roundLabel+(g.roundLabel==='GRAND FINAL'?' 🏆':'');
-  document.getElementById('fvMyName').textContent='⭐ '+myTeam();
+  document.getElementById('fvMyName').textContent=myTeam();
   document.getElementById('fvOppName').textContent=fvLabel(g.opp.name);
   document.getElementById('fvOppLbl').textContent=fvShort(g.opp.name);
   const oppEmojiEl=document.getElementById('fvOppEmoji');if(oppEmojiEl)oppEmojiEl.textContent=fvEmoji(g.opp.name);
@@ -5037,10 +5065,25 @@ function fvRenderGame(){
   const feed=document.getElementById('fvFeed');
   feed.innerHTML='<div class="fv-feed-prompt">Choose how to watch above ↑</div>';
 
-  FV.events=[];FV.myPts=0;FV.oppPts=0;
+  FV.events=[];FV.myPts=0;FV.oppPts=0;FV.eventIdx=0;FV.paused=false;
   ['fvWatchBtn','fvSimBtn','fvSkipBtn','fvSkipAllBtn'].forEach(id=>{
     const el=document.getElementById(id);if(el)el.disabled=false;
   });
+  // Show choose-how-to-watch popup
+  const g=FV.games[FV.idx];
+  const isGF=g.roundLabel==='GRAND FINAL';
+  document.getElementById('fvChooseEmoji').textContent=isGF?'🏆':'🏉';
+  document.getElementById('fvChooseTitle').textContent=g.roundLabel;
+  document.getElementById('fvChooseSub').textContent=`${myTeam()} vs ${fvShort(g.opp.name)}`;
+  document.getElementById('fvChoosePopup').style.display='flex';
+}
+
+function fvChoose(action){
+  document.getElementById('fvChoosePopup').style.display='none';
+  if(action==='watch') fvWatchToggle();
+  else if(action==='sim') fvSim();
+  else if(action==='skip') fvSkipMatch();
+  else if(action==='skipall') fvSkipFinals();
 }
 
 function fvPickMyScorer(){
@@ -5134,9 +5177,8 @@ function fvAppendEvent(ev){
     div.innerHTML='<div class="fv-event-body">— HALF TIME —</div>';
   } else {
     div.className='fv-event'+(ev.team==='me'?' is-me':ev.team==='opp'?' is-opp':'')+(ev.cls?' '+ev.cls:'');
-    const teamBadge=ev.team==='me'?`<span style="margin-right:4px">${myEmoji}</span>`
-                   :ev.team==='opp'?`<span style="margin-right:4px">${oppEmoji}</span>`:'';
-    div.innerHTML=`<span class="fv-event-min">${ev.min}'</span><span class="fv-event-icon">${ev.icon}</span><div class="fv-event-body">${teamBadge}${ev.body}</div>`;
+    const teamBadge=ev.team==='me'?myEmoji:ev.team==='opp'?oppEmoji:'';
+    div.innerHTML=`<span class="fv-event-min">${ev.min}'</span><span class="fv-event-icon">${ev.icon}</span><span class="fv-event-badge">${teamBadge}</span><div class="fv-event-body">${ev.body}</div>`;
     if(ev.team==='me') FV.myPts+=ev.pts||0;
     else if(ev.team==='opp') FV.oppPts+=ev.pts||0;
     document.getElementById('fvMyScore').textContent=FV.myPts;
