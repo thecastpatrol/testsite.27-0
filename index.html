@@ -401,51 +401,67 @@ tr.tr-tribute .pst-name{color:#02702A!important;font-weight:900!important}
 .finals-matchup .fm-score.win{color:#22c55e;font-weight:800}
 .finals-matchup .fm-score.loss{color:#ef4444;font-weight:800}
 /* ── Finals Match Viewer ── */
-#finals-viewer{display:flex;flex-direction:column;height:100%;padding:0}
-.fv-header{background:var(--card);border-bottom:1px solid #333;padding:12px 16px 10px;flex-shrink:0}
-.fv-round-badge{display:inline-block;font-size:9px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--gold);border:1px solid rgba(241,192,115,0.35);border-radius:4px;padding:2px 7px;margin-bottom:6px}
-.fv-matchup-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
-.fv-team-name{flex:1;font-size:15px;font-weight:900;color:var(--text)}
-.fv-team-name.is-me{color:var(--gold)}
-.fv-vs{font-size:11px;color:var(--muted);font-weight:700;flex-shrink:0}
-.fv-scoreboard{display:flex;align-items:center;gap:0;justify-content:center;margin-top:4px}
-.fv-score-box{font-size:28px;font-weight:900;font-family:'Lilita One',cursive;min-width:54px;text-align:center;line-height:1}
-.fv-score-box.win{color:#22c55e}
-.fv-score-box.loss{color:#ef4444}
-.fv-score-box.neutral{color:var(--muted)}
-.fv-score-sep{font-size:18px;color:#444;padding:0 4px;font-weight:700}
-.fv-score-label{font-size:8px;color:var(--muted);text-align:center;letter-spacing:.8px;text-transform:uppercase;margin-top:2px}
-.fv-feed{flex:1;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column;gap:0}
-.fv-feed-empty{color:var(--muted);font-size:12px;text-align:center;padding:30px 0;font-style:italic}
-.fv-event{display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid #1c1c2a;animation:fvSlideIn .25s ease}
-.fv-event:last-child{border-bottom:none}
-@keyframes fvSlideIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
-.fv-event-min{font-size:9px;color:var(--muted);font-weight:700;min-width:28px;padding-top:2px;flex-shrink:0}
-.fv-event-icon{font-size:14px;flex-shrink:0;width:20px;text-align:center}
-.fv-event-body{flex:1;font-size:12px;line-height:1.35}
-.fv-event-body strong{font-weight:700}
-.fv-event.is-me .fv-event-body strong{color:#f1c073}
-.fv-event.is-opp .fv-event-body strong{color:#aaa}
-.fv-event.is-convert .fv-event-body{color:var(--muted)}
-.fv-event.is-penalty .fv-event-body{color:#a78}
-.fv-event.is-halftime{justify-content:center;padding:7px 0}
-.fv-event.is-halftime .fv-event-body{text-align:center;font-size:10px;color:var(--muted);letter-spacing:1px;text-transform:uppercase;font-weight:700}
-.fv-controls{flex-shrink:0;background:var(--card);border-top:1px solid #333;padding:10px 12px;display:flex;gap:7px;flex-wrap:wrap}
-.fv-btn{flex:1;min-width:70px;padding:9px 6px;border-radius:7px;border:none;font-size:11px;font-weight:800;letter-spacing:.5px;cursor:pointer;text-transform:uppercase;transition:opacity .15s}
-.fv-btn:hover{opacity:.85}
+#finals-viewer{display:flex;flex-direction:column;height:100%;padding:0;overflow:hidden}
+.fv-top-bar{flex-shrink:0;background:var(--card);border-bottom:1px solid #2a2a3a;padding:8px 10px;display:flex;gap:6px}
+.fv-btn{flex:1;padding:8px 4px;border-radius:7px;border:none;font-size:10px;font-weight:800;letter-spacing:.4px;cursor:pointer;text-transform:uppercase;transition:opacity .15s;white-space:nowrap}
+.fv-btn:hover{opacity:.82}
+.fv-btn:disabled{opacity:.32;cursor:not-allowed}
 .fv-btn-watch{background:var(--gold);color:#111}
 .fv-btn-sim{background:#2563eb;color:#fff}
-.fv-btn-skip{background:var(--card2);color:var(--text);border:1px solid #444}
-.fv-btn-skipall{background:transparent;color:var(--muted);border:1px solid #333;font-size:10px}
-.fv-btn:disabled{opacity:.35;cursor:not-allowed}
-.fv-result-card{background:var(--card2);border-radius:8px;padding:12px;margin:8px 0;text-align:center}
-.fv-result-card.win{border:1px solid rgba(34,197,94,0.4);background:rgba(34,197,94,0.07)}
-.fv-result-card.loss{border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.07)}
-.fv-result-label{font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;margin-bottom:3px}
-.fv-result-card.win .fv-result-label{color:#22c55e}
-.fv-result-card.loss .fv-result-label{color:#ef4444}
-.fv-result-score{font-size:26px;font-weight:900;font-family:'Lilita One',cursive;color:var(--text)}
-.fv-next-btn{width:100%;margin-top:8px;padding:11px;border-radius:8px;border:none;font-size:13px;font-weight:800;cursor:pointer;letter-spacing:.5px}
+.fv-btn-skip{background:var(--card2);color:var(--text);border:1px solid #3a3a4a}
+.fv-btn-skipall{background:transparent;color:var(--muted);border:1px solid #2a2a3a;font-size:9px}
+.fv-header{flex-shrink:0;background:var(--card2);border-bottom:1px solid #222;padding:10px 14px 8px}
+.fv-round-badge{display:inline-block;font-size:9px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:var(--gold);border:1px solid rgba(241,192,115,0.3);border-radius:4px;padding:2px 7px;margin-bottom:7px}
+.fv-matchup-row{display:flex;align-items:center;gap:6px;margin-bottom:7px;min-width:0}
+.fv-team-name{flex:1;font-size:13px;font-weight:900;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.2}
+.fv-team-name.is-me{color:var(--gold)}
+.fv-team-name.opp-name{text-align:right}
+.fv-vs{font-size:10px;color:var(--muted);font-weight:700;flex-shrink:0;padding:0 2px}
+.fv-scoreboard{display:flex;align-items:center;justify-content:center;gap:4px}
+.fv-score-col{display:flex;flex-direction:column;align-items:center;min-width:52px}
+.fv-score-box{font-size:30px;font-weight:900;font-family:'Lilita One',cursive;line-height:1;color:var(--muted)}
+.fv-score-box.win{color:#22c55e}
+.fv-score-box.loss{color:#ef4444}
+.fv-score-lbl{font-size:8px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-top:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:80px;text-align:center}
+.fv-score-sep{font-size:20px;color:#333;font-weight:900;padding:0 2px;align-self:center}
+.fv-feed{flex:1;overflow-y:auto;padding:6px 12px;display:flex;flex-direction:column}
+.fv-feed-prompt{color:var(--muted);font-size:11px;text-align:center;padding:20px 0;font-style:italic;flex-shrink:0}
+.fv-event{display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid #1a1a28;flex-shrink:0}
+.fv-event-min{font-size:9px;color:var(--muted);font-weight:700;min-width:26px;padding-top:2px;flex-shrink:0}
+.fv-event-icon{font-size:13px;flex-shrink:0;width:18px;text-align:center;padding-top:1px}
+.fv-event-body{flex:1;font-size:12px;line-height:1.35;min-width:0}
+.fv-event-body strong{font-weight:800}
+.fv-event.is-me .fv-event-body strong{color:#f1c073}
+.fv-event.is-opp .fv-event-body strong{color:#ccc}
+.fv-event.is-convert .fv-event-body{color:var(--muted);font-size:11px}
+.fv-event.is-missed .fv-event-body{color:#664444;font-size:11px}
+.fv-event.is-penalty .fv-event-body{color:#9988aa;font-size:11px}
+.fv-event.is-halftime{justify-content:center;padding:8px 0;border-bottom:1px solid #2a2a3a}
+.fv-event.is-halftime .fv-event-body{text-align:center;font-size:9px;color:#444;letter-spacing:1.5px;text-transform:uppercase;font-weight:700}
+/* Made Finals popup */
+.fv-overlay{position:fixed;inset:0;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;z-index:9000;padding:20px}
+.fv-popup{background:var(--card);border:1px solid #333;border-radius:14px;padding:24px 20px;max-width:320px;width:100%;text-align:center}
+.fv-popup-icon{font-size:40px;margin-bottom:8px}
+.fv-popup-title{font-size:20px;font-weight:900;font-family:'Lilita One',cursive;color:var(--gold);margin-bottom:6px;line-height:1.15}
+.fv-popup-sub{font-size:13px;color:var(--muted);margin-bottom:18px;line-height:1.4}
+.fv-popup-btn{width:100%;padding:13px;border-radius:9px;border:none;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:.4px;margin-bottom:8px}
+.fv-popup-btn.primary{background:var(--gold);color:#111}
+.fv-popup-btn.secondary{background:var(--card2);color:var(--muted);font-size:12px;padding:9px}
+/* Result popup */
+.fv-result-popup{position:fixed;inset:0;background:rgba(0,0,0,.82);display:flex;align-items:center;justify-content:center;z-index:9000;padding:20px}
+.fv-result-box{background:var(--card);border-radius:14px;padding:22px 18px;max-width:320px;width:100%;text-align:center;position:relative}
+.fv-result-box.win{border:1px solid rgba(34,197,94,0.45)}
+.fv-result-box.loss{border:1px solid rgba(239,68,68,0.35)}
+.fv-result-close{position:absolute;top:10px;right:12px;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;line-height:1;padding:4px}
+.fv-result-verdict{font-size:12px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:4px}
+.fv-result-box.win .fv-result-verdict{color:#22c55e}
+.fv-result-box.loss .fv-result-verdict{color:#ef4444}
+.fv-result-teams{font-size:12px;color:var(--muted);margin-bottom:4px}
+.fv-result-final-score{font-size:32px;font-weight:900;font-family:'Lilita One',cursive;color:var(--text);margin-bottom:16px;line-height:1}
+/* Floating next button when popup is closed */
+.fv-float-next{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:8000;padding:12px 28px;border-radius:10px;border:none;font-size:13px;font-weight:800;cursor:pointer;letter-spacing:.4px;box-shadow:0 4px 20px rgba(0,0,0,.6);white-space:nowrap}
+.fv-float-next.win{background:#22c55e;color:#111}
+.fv-float-next.loss{background:#ef4444;color:#fff}
 #results{padding:16px;align-items:center;overflow-y:auto}#squad-complete>.header,#results>.header{align-self:stretch;margin:-16px -16px 0}
 .results-inner{max-width:680px;width:100%;margin:0 auto}
 .result-hero{text-align:center;margin-bottom:20px;margin-top:24px}
@@ -1367,27 +1383,52 @@ body {
 </div>
 
 <div id="finals-viewer" class="screen">
+  <div class="fv-top-bar">
+    <button class="fv-btn fv-btn-watch" id="fvWatchBtn" onclick="fvWatch()">▶ Watch Game</button>
+    <button class="fv-btn fv-btn-sim" id="fvSimBtn" onclick="fvSim()">⚡ Sim Game</button>
+    <button class="fv-btn fv-btn-skip" id="fvSkipBtn" onclick="fvSkipMatch()">⏭ Skip Match</button>
+    <button class="fv-btn fv-btn-skipall" id="fvSkipAllBtn" onclick="fvSkipFinals()">⏭⏭ Skip Finals</button>
+  </div>
   <div class="fv-header">
     <div class="fv-round-badge" id="fvRound">Finals</div>
     <div class="fv-matchup-row">
       <div class="fv-team-name is-me" id="fvMyName"></div>
       <div class="fv-vs">vs</div>
-      <div class="fv-team-name" id="fvOppName" style="text-align:right"></div>
+      <div class="fv-team-name opp-name" id="fvOppName"></div>
     </div>
     <div class="fv-scoreboard">
-      <div><div class="fv-score-box neutral" id="fvMyScore">—</div><div class="fv-score-label">You</div></div>
-      <div class="fv-score-sep">:</div>
-      <div><div class="fv-score-box neutral" id="fvOppScore">—</div><div class="fv-score-label" id="fvOppLabel">Opp</div></div>
+      <div class="fv-score-col">
+        <div class="fv-score-box" id="fvMyScore">0</div>
+        <div class="fv-score-lbl">You</div>
+      </div>
+      <div class="fv-score-sep">–</div>
+      <div class="fv-score-col">
+        <div class="fv-score-box" id="fvOppScore">0</div>
+        <div class="fv-score-lbl" id="fvOppLbl">Opp</div>
+      </div>
     </div>
   </div>
   <div class="fv-feed" id="fvFeed">
-    <div class="fv-feed-empty" id="fvEmpty">Choose how to watch this match</div>
+    <div class="fv-feed-prompt">Choose how to watch above</div>
   </div>
-  <div class="fv-controls" id="fvControls">
-    <button class="fv-btn fv-btn-watch" id="fvWatchBtn" onclick="fvWatch()">▶ Watch</button>
-    <button class="fv-btn fv-btn-sim" id="fvSimBtn" onclick="fvSim()">⚡ Sim</button>
-    <button class="fv-btn fv-btn-skip" id="fvSkipBtn" onclick="fvSkipMatch()">⏭ Skip Match</button>
-    <button class="fv-btn fv-btn-skipall" id="fvSkipAllBtn" onclick="fvSkipFinals()">⏭⏭ Skip Finals</button>
+</div>
+<!-- Made Finals popup -->
+<div class="fv-overlay" id="fvMadeFinalsPopup" style="display:none">
+  <div class="fv-popup">
+    <div class="fv-popup-icon">🏆</div>
+    <div class="fv-popup-title" id="fvMFTitle">You've Made the Finals!</div>
+    <div class="fv-popup-sub" id="fvMFSub"></div>
+    <button class="fv-popup-btn primary" onclick="fvDismissMadeFinalsPopup()">Proceed to Finals 🏆</button>
+  </div>
+</div>
+<!-- Match Result popup -->
+<div class="fv-result-popup" id="fvResultPopup" style="display:none">
+  <div class="fv-result-box" id="fvResultBox">
+    <button class="fv-result-close" onclick="fvCloseResultPopup()" title="View match events">✕</button>
+    <div class="fv-result-verdict" id="fvResultVerdict"></div>
+    <div class="fv-result-teams" id="fvResultTeams"></div>
+    <div class="fv-result-final-score" id="fvResultScore"></div>
+    <button class="fv-popup-btn primary" id="fvResultNextBtn" onclick="fvNextGame()"></button>
   </div>
 </div>
 <div id="results" class="screen">
@@ -4863,7 +4904,27 @@ function buildFinalsBracket(f,ladder){
 // ============================================================
 // FINALS MATCH VIEWER
 // ============================================================
-const FV={games:[],idx:0,timer:null};
+const FV_ROSTERS={
+  "Penrith Panthers":{conv:"Nathan Cleary",players:[{n:"Dylan Edwards",p:"FB"},{n:"Brian To'o",p:"W"},{n:"Josh Mansour",p:"W"},{n:"Ryan Girdler",p:"C"},{n:"Paul Franze",p:"C"},{n:"Jamie Soward",p:"FE"},{n:"Nathan Cleary",p:"HB"},{n:"Brent Kite",p:"P"},{n:"Mitch Kenny",p:"HK"},{n:"Moses Leota",p:"P"},{n:"Liam Martin",p:"SR"},{n:"Trent Waterhouse",p:"SR"},{n:"Isaah Yeo",p:"LK"}]},
+  "Melbourne Storm":{conv:"Cameron Smith",players:[{n:"Billy Slater",p:"FB"},{n:"Matt Geyer",p:"W"},{n:"Xavier Coates",p:"W"},{n:"Will Chambers",p:"C"},{n:"Matt King",p:"C"},{n:"Cameron Munster",p:"FE"},{n:"Jahrome Hughes",p:"HB"},{n:"Glenn Lazarus",p:"P"},{n:"Cameron Smith",p:"HK"},{n:"Robbie Kearns",p:"P"},{n:"Ryan Hoffman",p:"SR"},{n:"Eliesa Katoa",p:"SR"},{n:"Tawera Nikau",p:"LK"}]},
+  "Sydney Roosters":{conv:"Brad Fittler",players:[{n:"James Tedesco",p:"FB"},{n:"Brett Morris",p:"W"},{n:"Anthony Minichiello",p:"W"},{n:"Josh Morris",p:"C"},{n:"Michael Jennings",p:"C"},{n:"Brad Fittler",p:"FE"},{n:"Cooper Cronk",p:"HB"},{n:"Jared Waerea-Hargreaves",p:"P"},{n:"Jake Friend",p:"HK"},{n:"Adrian Morley",p:"P"},{n:"Sonny Bill Williams",p:"SR"},{n:"Boyd Cordner",p:"SR"},{n:"Luke Ricketson",p:"LK"}]},
+  "Brisbane Broncos":{conv:"Darren Lockyer",players:[{n:"Reece Walsh",p:"FB"},{n:"Jharal Yow Yeh",p:"W"},{n:"Darius Boyd",p:"W"},{n:"Steve Renouf",p:"C"},{n:"Israel Folau",p:"C"},{n:"Darren Lockyer",p:"FE"},{n:"Allan Langer",p:"HB"},{n:"Payne Haas",p:"P"},{n:"Billy Walters",p:"HK"},{n:"Shane Webcke",p:"P"},{n:"Gorden Tallis",p:"SR"},{n:"Sam Thaiday",p:"SR"},{n:"Tonie Carroll",p:"LK"}]},
+  "Manly Warringah Sea Eagles":{conv:"Jamie Lyon",players:[{n:"Brett Stewart",p:"FB"},{n:"John Hopoate",p:"W"},{n:"Michael Robertson",p:"W"},{n:"Jamie Lyon",p:"C"},{n:"Steve Matai",p:"C"},{n:"Kieran Foran",p:"FE"},{n:"Daly Cherry-Evans",p:"HB"},{n:"Willie Mason",p:"P"},{n:"Matt Ballin",p:"HK"},{n:"Aaron Woods",p:"P"},{n:"Steve Menzies",p:"SR"},{n:"Haumole Olakau'atu",p:"SR"},{n:"Ben Kennedy",p:"LK"}]},
+  "North Queensland Cowboys":{conv:"Johnathan Thurston",players:[{n:"Matt Bowen",p:"FB"},{n:"Kyle Feldt",p:"W"},{n:"Ty Williams",p:"W"},{n:"Brent Tate",p:"C"},{n:"Paul Bowman",p:"C"},{n:"Jason Smith",p:"FE"},{n:"Johnathan Thurston",p:"HB"},{n:"Matthew Scott",p:"P"},{n:"Jake Granville",p:"HK"},{n:"Ben Hannant",p:"P"},{n:"Gavin Cooper",p:"SR"},{n:"Jeremiah Nanai",p:"SR"},{n:"Jason Taumalolo",p:"LK"}]},
+  "Cronulla-Sutherland Sharks":{conv:"Nicho Hynes",players:[{n:"Ben Barba",p:"FB"},{n:"Valentine Holmes",p:"W"},{n:"Ronaldo Mulitalo",p:"W"},{n:"Andrew Ettingshausen",p:"C"},{n:"Josh Dugan",p:"C"},{n:"Todd Carney",p:"FE"},{n:"Nicho Hynes",p:"HB"},{n:"Paul Gallen",p:"P"},{n:"Michael Ennis",p:"HK"},{n:"Andrew Fifita",p:"P"},{n:"Luke Lewis",p:"SR"},{n:"Wade Graham",p:"SR"},{n:"Dale Finucane",p:"LK"}]},
+  "South Sydney Rabbitohs":{conv:"Adam Reynolds",players:[{n:"Greg Inglis",p:"FB"},{n:"Alex Johnston",p:"W"},{n:"Nathan Merritt",p:"W"},{n:"Latrell Mitchell",p:"C"},{n:"Dane Gagai",p:"C"},{n:"John Sutton",p:"FE"},{n:"Adam Reynolds",p:"HB"},{n:"Roy Asotasi",p:"P"},{n:"Issac Luke",p:"HK"},{n:"George Burgess",p:"P"},{n:"Jai Arrow",p:"SR"},{n:"Sam Burgess",p:"SR"},{n:"Cameron Murray",p:"LK"}]},
+  "Canberra Raiders":{conv:"Jarrod Croker",players:[{n:"Clinton Schifcofske",p:"FB"},{n:"Jordan Rapana",p:"W"},{n:"Bill Tupou",p:"W"},{n:"Jarrod Croker",p:"C"},{n:"Shaun Berrigan",p:"C"},{n:"Laurie Daley",p:"FE"},{n:"Matt Orford",p:"HB"},{n:"Josh Papalii",p:"P"},{n:"Alan Tongue",p:"HK"},{n:"Joseph Tapine",p:"P"},{n:"David Furner",p:"SR"},{n:"Hudson Young",p:"SR"},{n:"Corey Horsburgh",p:"LK"}]},
+  "NZ Warriors":{conv:"Shaun Johnson",players:[{n:"Roger Tuivasa-Sheck",p:"FB"},{n:"Manu Vatuvei",p:"W"},{n:"Francis Meli",p:"W"},{n:"Ivan Cleary",p:"C"},{n:"Tony Martin",p:"C"},{n:"Shaun Johnson",p:"FE"},{n:"Stacey Jones",p:"HB"},{n:"James Fisher-Harris",p:"P"},{n:"Erin Clark",p:"HK"},{n:"Steve Price",p:"P"},{n:"Ruben Wiki",p:"SR"},{n:"Simon Mannering",p:"SR"},{n:"Micheal Luck",p:"LK"}]},
+  "Parramatta Eels":{conv:"Mitchell Moses",players:[{n:"Jarryd Hayne",p:"FB"},{n:"Semi Radradra",p:"W"},{n:"Josh Addo-Carr",p:"W"},{n:"Willie Tonga",p:"C"},{n:"Zac Lomax",p:"C"},{n:"Dylan Walker",p:"FE"},{n:"Mitchell Moses",p:"HB"},{n:"Nathan Cayless",p:"P"},{n:"Josh Hodgson",p:"HK"},{n:"Fuifui Moimoi",p:"P"},{n:"Nathan Hindmarsh",p:"SR"},{n:"Anthony Watmough",p:"SR"},{n:"Jim Dymock",p:"LK"}]},
+  "Newcastle Knights":{conv:"Andrew Johns",players:[{n:"Kalyn Ponga",p:"FB"},{n:"Darren Albert",p:"W"},{n:"Akuila Uate",p:"W"},{n:"Timana Tahu",p:"C"},{n:"Shaun Kenny-Dowall",p:"C"},{n:"Dylan Brown",p:"FE"},{n:"Andrew Johns",p:"HB"},{n:"Paul Harragon",p:"P"},{n:"Danny Buderus",p:"HK"},{n:"Tony Butterfield",p:"P"},{n:"Steve Simpson",p:"SR"},{n:"Tyson Frizell",p:"SR"},{n:"Bill Peden",p:"LK"}]},
+  "Canterbury-Bankstown Bulldogs":{conv:"Hazem El Masri",players:[{n:"Luke Patten",p:"FB"},{n:"Hazem El Masri",p:"W"},{n:"Daryl Halligan",p:"W"},{n:"Stephen Crichton",p:"C"},{n:"William Hopoate",p:"C"},{n:"Matt Burton",p:"FE"},{n:"Ricky Stuart",p:"HB"},{n:"Michael Hodgson",p:"P"},{n:"Adam Perry",p:"HK"},{n:"Paul Vaughan",p:"P"},{n:"Bradley Clyde",p:"SR"},{n:"Andrew Ryan",p:"SR"},{n:"Reni Maitua",p:"LK"}]},
+  "Gold Coast Titans":{conv:"Michael Gordon",players:[{n:"Michael Gordon",p:"FB"},{n:"Mat Rogers",p:"W"},{n:"Anthony Don",p:"W"},{n:"Steve Michaels",p:"C"},{n:"Clinton Toopi",p:"C"},{n:"Preston Campbell",p:"FE"},{n:"Ash Taylor",p:"HB"},{n:"Luke Bailey",p:"P"},{n:"Nathan Friend",p:"HK"},{n:"David Shillington",p:"P"},{n:"Mark Minichiello",p:"SR"},{n:"Anthony Laffranchi",p:"SR"},{n:"Tino Fa'asuamaleaui",p:"LK"}]},
+  "St. George Illawarra Dragons":{conv:"Gareth Widdop",players:[{n:"Clinton Gutherson",p:"FB"},{n:"Wendell Sailor",p:"W"},{n:"Jason Nightingale",p:"W"},{n:"Mark Gasnier",p:"C"},{n:"Matt Cooper",p:"C"},{n:"Gareth Widdop",p:"FE"},{n:"Ben Hornby",p:"HB"},{n:"James Graham",p:"P"},{n:"Damien Cook",p:"HK"},{n:"David Klemmer",p:"P"},{n:"Ben Creagh",p:"SR"},{n:"Bronson Harrison",p:"SR"},{n:"Trent Merrin",p:"LK"}]},
+  "Dolphins":{conv:"Jamayne Isaako",players:[{n:"Hamiso Tabuai-Fidow",p:"FB"},{n:"Jamayne Isaako",p:"W"},{n:"Jack Bostock",p:"W"},{n:"Herbie Farnworth",p:"C"},{n:"Jake Averillo",p:"C"},{n:"Kodi Nikorima",p:"FE"},{n:"Isaiya Katoa",p:"HB"},{n:"Jesse Bromwich",p:"P"},{n:"Jeremy Marshall-King",p:"HK"},{n:"Jarrod Wallace",p:"P"},{n:"Felise Kaufusi",p:"SR"},{n:"Kenny Bromwich",p:"SR"},{n:"Morgan Knowles",p:"LK"}]},
+  "Wests Tigers":{conv:"Benji Marshall",players:[{n:"Brett Hodgson",p:"FB"},{n:"Matt Utai",p:"W"},{n:"Pat Richards",p:"W"},{n:"Chris Lawrence",p:"C"},{n:"Justin Olam",p:"C"},{n:"Benji Marshall",p:"FE"},{n:"Scott Prince",p:"HB"},{n:"James Tamou",p:"P"},{n:"Robbie Farah",p:"HK"},{n:"John Skandalis",p:"P"},{n:"Gareth Ellis",p:"SR"},{n:"Chris Mcqueen",p:"SR"},{n:"Scott Sattler",p:"LK"}]},
+};
+
+const FV={games:[],idx:0,timer:null,myConv:'',events:[],myPts:0,oppPts:0};
 
 function launchFinalsViewer(){
   const f=STATE.season.finals;
@@ -4871,8 +4932,19 @@ function launchFinalsViewer(){
   FV.games=fvGetUserGames(f);
   if(!FV.games.length){showResults();return;}
   FV.idx=0;
+  FV.myConv=fvFindMyConv();
   showScreen('finals-viewer');
-  fvRenderGame();
+  fvShowMadeFinalsPopup();
+}
+
+function fvFindMyConv(){
+  for(const pos of['HB','FE','FB','C']){
+    const s=SLOTS.find(sl=>sl.type===pos&&STATE.team[sl.i]);
+    if(s) return STATE.team[s.i].name;
+  }
+  let best=null;
+  STATE.team.forEach(p=>{if(p&&(!best||p.rating>best.rating))best=p;});
+  return best?best.name:'';
 }
 
 function fvGetUserGames(f){
@@ -4882,62 +4954,50 @@ function fvGetUserGames(f){
       if(g.winner.name===myTeam()||g.loser.name===myTeam()){
         const iWon=g.winner.name===myTeam();
         const opp=iWon?g.loser:g.winner;
-        const myTr=iWon?g.wTries:g.lTries;
-        const oppTr=iWon?g.lTries:g.wTries;
-        games.push({roundLabel:wk.label,opp,iWon,myTr,oppTr,score:g.score});
+        games.push({roundLabel:wk.label,opp,iWon,myTr:iWon?g.wTries:g.lTries,oppTr:iWon?g.lTries:g.wTries});
       }
     });
   });
   return games;
 }
 
-function fvRenderGame(){
-  if(FV.timer){clearInterval(FV.timer);FV.timer=null;}
-  const g=FV.games[FV.idx];
-  const isLast=FV.idx===FV.games.length-1;
-  const isGF=g.roundLabel==='GRAND FINAL';
-
-  document.getElementById('fvRound').textContent=g.roundLabel+(isGF?' 🏆':'');
-  document.getElementById('fvMyName').textContent='⭐ '+myTeam();
-  document.getElementById('fvOppName').textContent=g.opp.name;
-  document.getElementById('fvOppLabel').textContent=g.opp.name.split(' ').pop();
-  document.getElementById('fvMyScore').textContent='—';
-  document.getElementById('fvOppScore').textContent='—';
-  document.getElementById('fvMyScore').className='fv-score-box neutral';
-  document.getElementById('fvOppScore').className='fv-score-box neutral';
-
-  const feed=document.getElementById('fvFeed');
-  feed.innerHTML='<div class="fv-feed-empty" id="fvEmpty">Choose how to watch this match</div>';
-
-  // Re-enable all control buttons
-  ['fvWatchBtn','fvSimBtn','fvSkipBtn','fvSkipAllBtn'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(el){el.disabled=false;el.style.display='';}
-  });
+function fvShowMadeFinalsPopup(){
+  const pos=STATE.season.myLadderPos;
+  const s=STATE.season;
+  document.getElementById('fvMFTitle').textContent="You've Made the Top 8!";
+  document.getElementById('fvMFSub').textContent=`You finished ${pos}${ordinal(pos)} on the ladder with a ${s.wins}-${s.losses} record. Time to go all the way.`;
+  document.getElementById('fvMadeFinalsPopup').style.display='flex';
 }
 
-const OPP_SCORERS={
-  FB:['Fullback','Sweeper'],
-  W:['Left Winger','Right Winger','Winger'],
-  C:['Centre','Left Centre','Right Centre'],
-  FE:['Five-Eighth'],
-  HB:['Halfback'],
-  P:['Prop','Front Rower'],
-  HK:['Hooker'],
-  SR:['Second Rower','Edge Forward'],
-  LK:['Lock']
-};
-const OPP_SURNAMES=['Harris','Williams','Johnson','Smith','Brown','Jones','Taylor','Martin','Thompson','White','Walker','Hall','Young','King','Baker','Moore','Davis','Evans','Clark','Lewis'];
+function fvDismissMadeFinalsPopup(){
+  document.getElementById('fvMadeFinalsPopup').style.display='none';
+  fvRenderGame();
+}
 
-function fvPickOppScorer(){
-  const posKeys=Object.keys(TRY_WEIGHTS);
-  const ws=posKeys.map(p=>TRY_WEIGHTS[p]);
-  const tot=ws.reduce((a,b)=>a+b,0);
-  let r=Math.random()*tot;
-  let pos=posKeys[posKeys.length-1];
-  for(let i=0;i<posKeys.length;i++){r-=ws[i];if(r<=0){pos=posKeys[i];break;}}
-  const labels=OPP_SCORERS[pos]||['Player'];
-  return labels[Math.floor(Math.random()*labels.length)]+' '+OPP_SURNAMES[Math.floor(Math.random()*OPP_SURNAMES.length)];
+function fvRenderGame(){
+  if(FV.timer){clearInterval(FV.timer);FV.timer=null;}
+  // Remove any floating next button
+  const fn=document.getElementById('fvFloatNext');
+  if(fn) fn.remove();
+  document.getElementById('fvResultPopup').style.display='none';
+
+  const g=FV.games[FV.idx];
+  document.getElementById('fvRound').textContent=g.roundLabel+(g.roundLabel==='GRAND FINAL'?' 🏆':'');
+  document.getElementById('fvMyName').textContent='⭐ '+myTeam();
+  document.getElementById('fvOppName').textContent=g.opp.name;
+  document.getElementById('fvOppLbl').textContent=g.opp.name.split(' ').slice(-1)[0];
+  document.getElementById('fvMyScore').textContent='0';
+  document.getElementById('fvMyScore').className='fv-score-box';
+  document.getElementById('fvOppScore').textContent='0';
+  document.getElementById('fvOppScore').className='fv-score-box';
+
+  const feed=document.getElementById('fvFeed');
+  feed.innerHTML='<div class="fv-feed-prompt">Choose how to watch above ↑</div>';
+
+  FV.events=[];FV.myPts=0;FV.oppPts=0;
+  ['fvWatchBtn','fvSimBtn','fvSkipBtn','fvSkipAllBtn'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.disabled=false;
+  });
 }
 
 function fvPickMyScorer(){
@@ -4950,123 +5010,172 @@ function fvPickMyScorer(){
   return STATE.team[chosen.i].name;
 }
 
+function fvPickOppScorer(oppName){
+  const roster=FV_ROSTERS[oppName];
+  if(!roster||!roster.players.length) return 'Unknown';
+  const pl=roster.players;
+  const ws=pl.map(p=>TRY_WEIGHTS[p.p]||4);
+  const tot=ws.reduce((a,b)=>a+b,0);
+  let r=Math.random()*tot,chosen=pl[pl.length-1];
+  for(let j=0;j<pl.length;j++){r-=ws[j];if(r<=0){chosen=pl[j];break;}}
+  return chosen.n;
+}
+
+function fvOppConv(oppName){
+  return(FV_ROSTERS[oppName]&&FV_ROSTERS[oppName].conv)||'';
+}
+
 function fvGenerateEvents(g){
   const events=[];
-  // Distribute tries across 80 mins avoiding 0 and 80
-  const myMins=[],oppMins=[];
-  const usedMins=new Set();
-  function pickMin(){let m;do{m=rand(1,79);}while(usedMins.has(m));usedMins.add(m);return m;}
-  for(let i=0;i<g.myTr;i++) myMins.push(pickMin());
-  for(let i=0;i<g.oppTr;i++) oppMins.push(pickMin());
+  const used=new Set([40]);
+  function pickMin(){let m,tries=0;do{m=rand(1,79);tries++;}while(used.has(m)&&tries<120);used.add(m);return m;}
 
-  myMins.forEach(m=>{
+  // My tries
+  for(let i=0;i<g.myTr;i++){
+    const m=pickMin();
     const scorer=fvPickMyScorer();
-    const converted=Math.random()>0.15;
-    events.push({min:m,team:'me',type:'try',icon:'🟡',text:`<strong>${scorer}</strong> scores for ${myTeam()}!`,pts:6});
-    if(converted) events.push({min:m+1,team:'me',type:'convert',icon:'✅',text:`Conversion successful`,pts:2,isConvert:true});
-  });
-  oppMins.forEach(m=>{
-    const scorer=fvPickOppScorer();
     const converted=Math.random()>0.18;
-    events.push({min:m,team:'opp',type:'try',icon:'⚫',text:`<strong>${scorer}</strong> scores for ${g.opp.name}`,pts:6});
-    if(converted) events.push({min:m+1,team:'opp',type:'convert',icon:'✅',text:`Conversion successful`,pts:2,isConvert:true});
-  });
-  // halftime marker
-  events.push({min:40,team:'',type:'halftime',icon:'',text:'— HALF TIME —',isHalftime:true});
+    events.push({min:m,team:'me',icon:'🟡',body:`<strong>${scorer}</strong> scores for ${myTeam()}!`,pts:4});
+    const cm=Math.min(m+1,79);
+    if(converted){
+      events.push({min:cm,team:'me',icon:'✅',body:`Conversion — ${FV.myConv}`,pts:2,cls:'is-convert'});
+    } else {
+      events.push({min:cm,team:'me',icon:'❌',body:`Conversion missed — ${FV.myConv}`,pts:0,cls:'is-missed'});
+    }
+  }
+  // Opp tries
+  const oc=fvOppConv(g.opp.name);
+  for(let i=0;i<g.oppTr;i++){
+    const m=pickMin();
+    const scorer=fvPickOppScorer(g.opp.name);
+    const converted=Math.random()>0.18;
+    events.push({min:m,team:'opp',icon:'⚫',body:`<strong>${scorer}</strong> scores for ${g.opp.name}`,pts:4});
+    const cm=Math.min(m+1,79);
+    if(converted){
+      events.push({min:cm,team:'opp',icon:'✅',body:`Conversion — ${oc}`,pts:2,cls:'is-convert'});
+    } else {
+      events.push({min:cm,team:'opp',icon:'❌',body:`Conversion missed — ${oc}`,pts:0,cls:'is-missed'});
+    }
+  }
+  // Penalty goals (0-2 per team)
+  const myPens=rand(0,2),oppPens=rand(0,2);
+  for(let i=0;i<myPens;i++) events.push({min:pickMin(),team:'me',icon:'🎯',body:`Penalty goal — ${FV.myConv}`,pts:2,cls:'is-penalty'});
+  for(let i=0;i<oppPens;i++) events.push({min:pickMin(),team:'opp',icon:'🎯',body:`Penalty goal — ${oc}`,pts:2,cls:'is-penalty'});
+
+  // Half time marker
+  events.push({min:40,isHalftime:true});
   events.sort((a,b)=>a.min-b.min||(a.isHalftime?-1:b.isHalftime?1:0));
   return events;
 }
 
-function fvRenderEvents(events,g,upTo){
+function fvAppendEvent(ev){
   const feed=document.getElementById('fvFeed');
-  feed.innerHTML='';
-  let myPts=0,oppPts=0;
-  const shown=upTo==null?events:events.slice(0,upTo);
-  shown.forEach(ev=>{
-    if(ev.team==='me') myPts+=ev.pts||0;
-    else if(ev.team==='opp') oppPts+=ev.pts||0;
-    const div=document.createElement('div');
-    if(ev.isHalftime){
-      div.className='fv-event is-halftime';
-      div.innerHTML=`<div class="fv-event-body">${ev.text}</div>`;
-    } else {
-      div.className=`fv-event${ev.team==='me'?' is-me':ev.team==='opp'?' is-opp':''}${ev.isConvert?' is-convert':''}`;
-      div.innerHTML=`<span class="fv-event-min">${ev.min}'</span><span class="fv-event-icon">${ev.icon}</span><div class="fv-event-body">${ev.text}</div>`;
-    }
-    feed.appendChild(div);
-  });
-  feed.scrollTop=feed.scrollHeight;
-  // Update live score
-  if(upTo!=null&&upTo>0){
-    document.getElementById('fvMyScore').textContent=myPts;
-    document.getElementById('fvOppScore').textContent=oppPts;
+  // Remove prompt if still there
+  const prompt=feed.querySelector('.fv-feed-prompt');
+  if(prompt) prompt.remove();
+
+  const div=document.createElement('div');
+  if(ev.isHalftime){
+    div.className='fv-event is-halftime';
+    div.innerHTML='<div class="fv-event-body">— HALF TIME —</div>';
+  } else {
+    div.className='fv-event'+(ev.team==='me'?' is-me':ev.team==='opp'?' is-opp':'')+(ev.cls?' '+ev.cls:'');
+    div.innerHTML=`<span class="fv-event-min">${ev.min}'</span><span class="fv-event-icon">${ev.icon}</span><div class="fv-event-body">${ev.body}</div>`;
+    if(ev.team==='me') FV.myPts+=ev.pts||0;
+    else if(ev.team==='opp') FV.oppPts+=ev.pts||0;
+    document.getElementById('fvMyScore').textContent=FV.myPts;
+    document.getElementById('fvOppScore').textContent=FV.oppPts;
   }
-  return{myPts,oppPts};
+  // Prepend so newest is at top
+  feed.insertBefore(div,feed.firstChild);
 }
 
-function fvFinishDisplay(g){
-  // Lock in final score and colour
-  const myScEl=document.getElementById('fvMyScore');
-  const opScEl=document.getElementById('fvOppScore');
-  myScEl.textContent=g.myTr*6;
-  opScEl.textContent=g.oppTr*6;
-  myScEl.className='fv-score-box '+(g.iWon?'win':'loss');
-  opScEl.className='fv-score-box '+(g.iWon?'loss':'win');
+function fvLockScore(g){
+  const myEl=document.getElementById('fvMyScore');
+  const opEl=document.getElementById('fvOppScore');
+  myEl.className='fv-score-box '+(g.iWon?'win':'loss');
+  opEl.className='fv-score-box '+(g.iWon?'loss':'win');
+}
 
-  // Show result card + next button inside feed
-  const feed=document.getElementById('fvFeed');
-  const card=document.createElement('div');
-  card.className='fv-result-card '+(g.iWon?'win':'loss');
+function fvShowResultPopup(g){
+  fvLockScore(g);
   const isLast=FV.idx===FV.games.length-1;
-  const nextLabel=isLast?'View Season Results →':'Next Match →';
-  const nextStyle=g.iWon?'background:#22c55e;color:#111':'background:#ef4444;color:#fff';
-  card.innerHTML=`<div class="fv-result-label">${g.iWon?'✅ WIN':'❌ ELIMINATED'}</div>
-    <div class="fv-result-score">${myTeam()} ${g.myTr*6} – ${g.oppTr*6} ${g.opp.name}</div>
-    <button class="fv-next-btn" style="${nextStyle}" onclick="fvNextGame()">${nextLabel}</button>`;
-  feed.appendChild(card);
-  feed.scrollTop=feed.scrollHeight;
-
-  // Disable watch/sim/skip, keep skip-finals
+  const box=document.getElementById('fvResultBox');
+  box.className='fv-result-box '+(g.iWon?'win':'loss');
+  document.getElementById('fvResultVerdict').textContent=g.iWon?(g.roundLabel==='GRAND FINAL'?'🏆 PREMIERS!':'✅ WIN'):'❌ ELIMINATED';
+  document.getElementById('fvResultTeams').textContent=`${myTeam()} vs ${g.opp.name}`;
+  document.getElementById('fvResultScore').textContent=`${FV.myPts} – ${FV.oppPts}`;
+  const btn=document.getElementById('fvResultNextBtn');
+  btn.textContent=isLast?'View Season Results →':'Next Finals Match →';
+  btn.className='fv-popup-btn '+(g.iWon?'primary':'secondary');
+  btn.style.background=g.iWon?'':'#ef4444';btn.style.color=g.iWon?'':'#fff';
+  document.getElementById('fvResultPopup').style.display='flex';
   ['fvWatchBtn','fvSimBtn','fvSkipBtn'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=true;});
+}
+
+function fvCloseResultPopup(){
+  document.getElementById('fvResultPopup').style.display='none';
+  // Add floating next button
+  const g=FV.games[FV.idx];
+  const isLast=FV.idx===FV.games.length-1;
+  let btn=document.getElementById('fvFloatNext');
+  if(!btn){btn=document.createElement('button');btn.id='fvFloatNext';document.body.appendChild(btn);}
+  btn.className='fv-float-next '+(g.iWon?'win':'loss');
+  btn.textContent=isLast?'View Season Results →':'Next Finals Match →';
+  btn.onclick=fvNextGame;
+  btn.style.display='block';
 }
 
 function fvWatch(){
   if(FV.timer){clearInterval(FV.timer);FV.timer=null;}
   ['fvWatchBtn','fvSimBtn','fvSkipBtn'].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=true;});
   const g=FV.games[FV.idx];
-  const events=fvGenerateEvents(g);
+  FV.events=fvGenerateEvents(g);
+  FV.myPts=0;FV.oppPts=0;
   let i=0;
   FV.timer=setInterval(()=>{
+    fvAppendEvent(FV.events[i]);
     i++;
-    fvRenderEvents(events,g,i);
-    if(i>=events.length){
-      clearInterval(FV.timer);FV.timer=null;
-      fvFinishDisplay(g);
-    }
+    if(i>=FV.events.length){clearInterval(FV.timer);FV.timer=null;fvShowResultPopup(g);}
   },700);
 }
 
 function fvSim(){
   if(FV.timer){clearInterval(FV.timer);FV.timer=null;}
   const g=FV.games[FV.idx];
-  const events=fvGenerateEvents(g);
-  fvRenderEvents(events,g,null);
-  fvFinishDisplay(g);
+  FV.events=fvGenerateEvents(g);
+  FV.myPts=0;FV.oppPts=0;
+  // Show all events at once — append in reverse so newest ends up at top
+  [...FV.events].reverse().forEach(ev=>fvAppendEvent(ev));
+  // Recalc score from scratch since reverse order messed up running total display
+  let mp=0,op=0;
+  FV.events.forEach(ev=>{if(ev.team==='me')mp+=ev.pts||0;else if(ev.team==='opp')op+=ev.pts||0;});
+  FV.myPts=mp;FV.oppPts=op;
+  document.getElementById('fvMyScore').textContent=mp;
+  document.getElementById('fvOppScore').textContent=op;
+  fvShowResultPopup(g);
 }
 
 function fvSkipMatch(){
   if(FV.timer){clearInterval(FV.timer);FV.timer=null;}
   const g=FV.games[FV.idx];
-  document.getElementById('fvFeed').innerHTML='';
-  fvFinishDisplay(g);
+  // Calculate a score without showing feed events
+  const events=fvGenerateEvents(g);
+  FV.myPts=0;FV.oppPts=0;
+  events.forEach(ev=>{if(ev.team==='me')FV.myPts+=ev.pts||0;else if(ev.team==='opp')FV.oppPts+=ev.pts||0;});
+  document.getElementById('fvMyScore').textContent=FV.myPts;
+  document.getElementById('fvOppScore').textContent=FV.oppPts;
+  fvShowResultPopup(g);
 }
 
 function fvSkipFinals(){
   if(FV.timer){clearInterval(FV.timer);FV.timer=null;}
+  const fn=document.getElementById('fvFloatNext');if(fn)fn.remove();
   showResults();
 }
 
 function fvNextGame(){
+  const fn=document.getElementById('fvFloatNext');if(fn)fn.remove();
   FV.idx++;
   if(FV.idx>=FV.games.length){showResults();return;}
   fvRenderGame();
