@@ -5360,6 +5360,10 @@ function fvNextGame(){
 }
 
 function showResults() {
+  document.getElementById('fvResultPopup').style.display='none';
+  document.getElementById('fvChoosePopup').style.display='none';
+  document.getElementById('fvMadeFinalsPopup').style.display='none';
+  document.getElementById('fvSkipFinalsConfirm').style.display='none';
   const s=STATE.season;const f=s.finals;
   if(typeof gtag!=='undefined'){
     const _fW=f.myTeamInFinals?f.myJourney.filter(j=>j.won).length:0;
