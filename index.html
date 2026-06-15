@@ -4689,7 +4689,7 @@ function startGame() {
   const _yFrom=parseInt(document.getElementById('eraSliderFrom')?.value)||1998;
   const _yTo=parseInt(document.getElementById('eraSliderTo')?.value)||2026;
   const _showR=(document.getElementById('ratingsToggle')?.dataset.val||'on')!=='off';
-  STATE={team:Array(13).fill(null),takenNames:new Set(),currentSpin:null,pendingPlayer:null,season:null,spinPickedThisSpin:false,teamName:_tName,yearFrom:_yFrom,yearTo:_yTo,showRatings:_showR,rerollUsed:false};
+  STATE={team:Array(13).fill(null),takenNames:new Set(),currentSpin:null,pendingPlayer:null,season:null,spinPickedThisSpin:false,teamName:_tName,yearFrom:_yFrom,yearTo:_yTo,showRatings:_showR,rerollUsed:false,gameMode:'classic',packs:[],packIdx:0,packAllCards:[],packPlayers:[]};
   if(typeof gtag!=='undefined')gtag('event','era_selected',{event_category:'setup',era_from:_yFrom,era_to:_yTo,era_range:(_yTo-_yFrom)});
   _rerollImpTracked=false;
   renderLineup();
@@ -5673,7 +5673,9 @@ function showResults() {
     heroEl.innerHTML=`<div class="result-hero"><div class="big-record">${totalW}-${totalL}</div><div class="result-meta-row"><div class="result-badge"><div class="result-badge-label">Ladder Finish</div><div class="result-badge-val rb-ladder">${ladderStr}</div></div><div class="result-badge"><div class="result-badge-label">Season Result</div><div class="result-badge-val" style="color:${finalsResultColor};font-size:${finalsResultSize}">${finalsResultText}</div></div></div><p class="narrative">${generateNarrative(s,f,total27_0,totalW)}</p></div>`;
   }
   const body=document.getElementById('resultsBody');body.innerHTML='';
-  body.innerHTML+=`${STATE.gameMode==='pack'?'<div style="text-align:center;font-size:11px;color:#888;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">📦 Pack Mode</div>':''}`;\n  body.innerHTML+=`<div style="margin-bottom:20px;display:flex;gap:10px"><button class="btn" onclick="showShareCard()" style="flex:1;background:#22c55e;border-color:#16a34a;color:#fff;font-size:15px;font-weight:900;padding:15px 10px;letter-spacing:0.4px;box-shadow:0 4px 20px rgba(34,197,94,0.35);border-radius:12px">📸 Share Your Season</button><button class="btn" onclick="resetGame()" style="flex:1;background:var(--card2);border:1px solid #444;color:var(--text);font-size:15px;font-weight:900;padding:15px 10px;letter-spacing:0.4px;border-radius:12px">🔄 Play Again</button></div>`;
+  body.innerHTML+=`${STATE.gameMode==='pack'?'<div style="text-align:center;font-size:11px;color:#888;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">📦 Pack Mode</div>':''}`;
+
+  body.innerHTML+=`<div style="margin-bottom:20px;display:flex;gap:10px"><button class="btn" onclick="showShareCard()" style="flex:1;background:#22c55e;border-color:#16a34a;color:#fff;font-size:15px;font-weight:900;padding:15px 10px;letter-spacing:0.4px;box-shadow:0 4px 20px rgba(34,197,94,0.35);border-radius:12px">📸 Share Your Season</button><button class="btn" onclick="resetGame()" style="flex:1;background:var(--card2);border:1px solid #444;color:var(--text);font-size:15px;font-weight:900;padding:15px 10px;letter-spacing:0.4px;border-radius:12px">🔄 Play Again</button></div>`;
   const finalsStatLabel=f.myTeamInFinals?'Finals':'Finals';
   const finalsStatVal=f.myTeamInFinals?`${finalsW}-${finalsL}`:'DNQ';
   body.innerHTML+=`<div class="results-section"><h3>📊 Season Summary</h3><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center"><div><div style="font-size:10px;color:var(--muted)">Regular Season</div><div style="font-size:20px;font-weight:900;color:var(--gold)">${s.wins}-${s.losses}</div></div><div><div style="font-size:10px;color:var(--muted)">Finals</div><div style="font-size:20px;font-weight:900;color:${f.myTeamInFinals?(f.isChampion?'var(--gold)':'#fff'):'var(--muted)'}">${finalsStatVal}</div></div><div><div style="font-size:10px;color:var(--muted)">Ladder Finish</div><div style="font-size:20px;font-weight:900">${s.myLadderPos}${ordinal(s.myLadderPos)}</div></div><div><div style="font-size:10px;color:var(--muted)">Pts For</div><div style="font-size:17px;font-weight:700">${s.pf}</div></div><div><div style="font-size:10px;color:var(--muted)">Pts Against</div><div style="font-size:17px;font-weight:700">${s.pa}</div></div><div><div style="font-size:10px;color:var(--muted)">Tries</div><div style="font-size:17px;font-weight:700;color:var(--gold)">${s.tries}</div></div></div></div>`;
@@ -5902,7 +5904,7 @@ function confirmReset(){
 }
 function resetGame(){
   if(typeof gtag!=='undefined')gtag('event','new_season_started',{event_category:'game'});
-  STATE={team:Array(13).fill(null),takenNames:new Set(),currentSpin:null,pendingPlayer:null,season:null,spinPickedThisSpin:false,teamName:'My Team'};
+  STATE={team:Array(13).fill(null),takenNames:new Set(),currentSpin:null,pendingPlayer:null,season:null,spinPickedThisSpin:false,teamName:'My Team',gameMode:'classic',packs:[],packIdx:0,packAllCards:[],packPlayers:[]};
   const _rtni=document.getElementById('teamNameInput');
   if(_rtni){try{const _sn=localStorage.getItem('27_teamName');_rtni.value=_sn||'';}catch(e){_rtni.value='';}  _rtni.style.borderColor='#333';}
   if(typeof _autoTimer!=='undefined'&&_autoTimer){clearInterval(_autoTimer);_autoTimer=null;}
@@ -5916,7 +5918,7 @@ function resetGame(){
   _resetClubColor();
   const sbn=document.getElementById('spinBtn'); if(sbn){sbn.disabled=false;}
   renderField();
-  showScreen('setup');
+  showScreen('mode-select');
 }
 
 // ════════════════════════════════════════════════════════
@@ -6225,11 +6227,11 @@ function generateShareCard(){
   return canvas;
 }
 
-showScreen('setup');
+showScreen('mode-select');
 try{const _sn=localStorage.getItem('27_teamName');if(_sn){const _i=document.getElementById('teamNameInput');if(_i)_i.value=_sn;}}catch(e){}
 // Reset to home if browser restores page from back-forward cache
 window.addEventListener('pageshow', function(e){
-  if(e.persisted) resetGame();
+  if(e.persisted) showScreen('mode-select');
 });
 
 </script>
