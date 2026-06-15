@@ -87,11 +87,24 @@ function buildWeightedPackPool() {
   };
 }
 
+function _ensurePackHeader(screenId) {
+  const screen = document.getElementById(screenId);
+  if (!screen || screen.querySelector('.header')) return;
+  const src = document.getElementById('draft')?.querySelector('.header');
+  if (!src) return;
+  const clone = src.cloneNode(true);
+  const p = clone.querySelector('.header-title p');
+  if (p) p.textContent = 'Pack Mode — open & build your squad';
+  screen.insertBefore(clone, screen.firstChild);
+}
+
 function startPackOpening() {
   const nameEl = document.getElementById('packTeamNameInput');
   const tName = (nameEl?.value?.trim() || 'My Team').substring(0, 40);
   STATE.teamName = tName;
   STATE.gameMode = 'pack';
+  _ensurePackHeader('pack-opening');
+  _ensurePackHeader('pack-squad');
 
   const tiers = buildWeightedPackPool();
 
@@ -379,21 +392,21 @@ function revealPackCards() {
     <div id="packCardsList" style="display:flex;flex-direction:column;gap:8px">${placeholders}</div>
   `;
 
-  // Footer with Next/Build button + Skip All link
+  // Footer with Next/Build button + Skip animation link
   const footer = document.getElementById('packOpeningFooter');
   if (footer) {
     const mainBtn = isLast
       ? `<button onclick="finishPackOpening()" style="width:100%;padding:16px;border:none;border-radius:12px;background:var(--gold);color:#111;font-size:17px;font-weight:900;cursor:pointer;font-family:'Lilita One',cursive;box-shadow:0 4px 20px rgba(0,0,0,0.4)">⚡ Build Your Team</button>`
       : `<button onclick="nextPack()" style="width:100%;padding:16px;border:none;border-radius:12px;background:linear-gradient(135deg,#3b5bdb,#6688ff);color:#fff;font-size:17px;font-weight:900;cursor:pointer;font-family:'Lilita One',cursive;box-shadow:0 4px 20px rgba(0,0,0,0.4)">Next Pack →</button>`;
-    const skipBtn = !isLast
-      ? `<div style="text-align:center;margin-top:8px"><button onclick="finishPackOpening()" style="background:none;border:none;color:#555;font-size:12px;font-weight:700;cursor:pointer;padding:4px 12px;letter-spacing:.5px">Skip to build team ↗</button></div>`
-      : '';
+    const skipBtn = `<div style="text-align:center;margin-top:8px"><button onclick="skipPackAnimation()" style="background:none;border:none;color:#555;font-size:12px;font-weight:700;cursor:pointer;padding:4px 12px;letter-spacing:.5px">Skip animation ↗</button></div>`;
     footer.innerHTML = `<div style="max-width:480px;margin:0 auto;padding:0 16px;box-sizing:border-box">${mainBtn}${skipBtn}</div>`;
   }
 
   // Reveal cards one by one from bottom (i=0) to top (i=n-1)
+  _packRevealCards = sorted;
+  _packRevealTimers = [];
   sorted.forEach((card, i) => {
-    setTimeout(() => {
+    const t = setTimeout(() => {
       const slot = document.getElementById(`pslot-${i}`);
       if (!slot) return;
       const {css, html} = _packCardHTML(card);
@@ -401,6 +414,22 @@ function revealPackCards() {
       slot.style.cssText = css;
       slot.innerHTML = html;
     }, i * 200);
+    _packRevealTimers.push(t);
+  });
+}
+
+let _packRevealCards = [];
+let _packRevealTimers = [];
+
+function skipPackAnimation() {
+  _packRevealTimers.forEach(t => clearTimeout(t));
+  _packRevealTimers = [];
+  _packRevealCards.forEach((card, i) => {
+    const slot = document.getElementById(`pslot-${i}`);
+    if (!slot || slot.innerHTML.trim()) return;
+    const {css, html} = _packCardHTML(card);
+    slot.style.cssText = css;
+    slot.innerHTML = html;
   });
 }
 
@@ -514,10 +543,14 @@ function renderPackPlayerList() {
       div.style.cssText = `background:${r.bg};border:1.5px solid ${r.border};border-radius:8px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:8px;cursor:${alreadyPicked?'default':'pointer'};opacity:${opacity}`;
       div.innerHTML = `<span style="font-size:20px;font-weight:900;color:${r.text};font-family:'Lilita One',cursive;min-width:30px">${card.rating}</span>${packClubBadge(card.club,'sm')}<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:800;color:${r.text}">${card.name}</div><div style="font-size:10px;color:${r.text};opacity:.7">${card.year} · ${card.positions.join(' / ')}</div></div>`;
     }
-    if (!alreadyPicked && _packSelectedSlot !== null) {
-      div.onclick = () => packAssignPlayer(card);
-    } else if (!alreadyPicked && !slotType) {
-      div.onclick = () => { /* need slot selected first */ };
+    if (!alreadyPicked) {
+      div.onclick = () => {
+        if (_packSelectedSlot !== null) {
+          packAssignPlayer(card);
+        } else {
+          packAutoAssignPlayer(card);
+        }
+      };
     }
     list.appendChild(div);
   });
@@ -535,6 +568,27 @@ function packAssignPlayer(card) {
   STATE.takenNames.add(card.name + '|' + (card.year||''));
   _packSelectedSlot = null;
   renderPackSquad();
+}
+
+function packAutoAssignPlayer(card) {
+  // Find the first empty slot this card's positions can fill
+  const eligible = typeof ELIGIBLE_SLOTS !== 'undefined' ? ELIGIBLE_SLOTS : {};
+  for (let i = 0; i < SLOTS.length; i++) {
+    if (STATE.team[i]) continue;
+    const slotType = SLOTS[i].type;
+    // A card fills a slot if any of the card's positions matches the slot type
+    // (respecting ELIGIBLE_SLOTS cross-position rules e.g. SR can fill LK)
+    const canFill = card.positions.some(p => {
+      if (p === slotType) return true;
+      const fillable = eligible[slotType] || [slotType];
+      return fillable.includes(p);
+    });
+    if (canFill) {
+      _packSelectedSlot = i;
+      packAssignPlayer(card);
+      return;
+    }
+  }
 }
 
 function packRemovePlayer(slotIdx) {
@@ -6038,9 +6092,9 @@ function showResults() {
     heroEl.innerHTML=`<div class="result-hero"><div class="big-record">${totalW}-${totalL}</div><div class="result-meta-row"><div class="result-badge"><div class="result-badge-label">Ladder Finish</div><div class="result-badge-val rb-ladder">${ladderStr}</div></div><div class="result-badge"><div class="result-badge-label">Season Result</div><div class="result-badge-val" style="color:${finalsResultColor};font-size:${finalsResultSize}">${finalsResultText}</div></div></div><p class="narrative">${generateNarrative(s,f,total27_0,totalW)}</p></div>`;
   }
   const body=document.getElementById('resultsBody');body.innerHTML='';
-  body.innerHTML+=`${STATE.gameMode==='pack'?'<div style="text-align:center;font-size:11px;color:#888;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px">📦 Pack Mode</div>':''}`;
 
-  body.innerHTML+=`<div style="margin-bottom:20px;display:flex;gap:10px"><button class="btn" onclick="showShareCard()" style="flex:1;background:#22c55e;border-color:#16a34a;color:#fff;font-size:15px;font-weight:900;padding:15px 10px;letter-spacing:0.4px;box-shadow:0 4px 20px rgba(34,197,94,0.35);border-radius:12px">📸 Share Your Season</button><button class="btn" onclick="resetGame()" style="flex:1;background:var(--card2);border:1px solid #444;color:var(--text);font-size:15px;font-weight:900;padding:15px 10px;letter-spacing:0.4px;border-radius:12px">🔄 Play Again</button></div>`;
+
+  body.innerHTML+=`<div style="margin-bottom:20px;display:flex;gap:10px"><button class="btn" onclick="showShareCard()" style="flex:1;background:#22c55e;border-color:#16a34a;color:#fff;font-size:15px;font-weight:900;padding:15px 10px;letter-spacing:0.4px;box-shadow:0 4px 20px rgba(34,197,94,0.35);border-radius:12px">📸 Share Your Season</button><button class="btn" onclick="showSocialPrompt()" style="flex:1;background:var(--card2);border:1px solid #444;color:var(--text);font-size:15px;font-weight:900;padding:15px 10px;letter-spacing:0.4px;border-radius:12px">🔄 Play Again</button></div>`;
   const finalsStatLabel=f.myTeamInFinals?'Finals':'Finals';
   const finalsStatVal=f.myTeamInFinals?`${finalsW}-${finalsL}`:'DNQ';
   body.innerHTML+=`<div class="results-section"><h3>📊 Season Summary</h3><div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;text-align:center"><div><div style="font-size:10px;color:var(--muted)">Regular Season</div><div style="font-size:20px;font-weight:900;color:var(--gold)">${s.wins}-${s.losses}</div></div><div><div style="font-size:10px;color:var(--muted)">Finals</div><div style="font-size:20px;font-weight:900;color:${f.myTeamInFinals?(f.isChampion?'var(--gold)':'#fff'):'var(--muted)'}">${finalsStatVal}</div></div><div><div style="font-size:10px;color:var(--muted)">Ladder Finish</div><div style="font-size:20px;font-weight:900">${s.myLadderPos}${ordinal(s.myLadderPos)}</div></div><div><div style="font-size:10px;color:var(--muted)">Pts For</div><div style="font-size:17px;font-weight:700">${s.pf}</div></div><div><div style="font-size:10px;color:var(--muted)">Pts Against</div><div style="font-size:17px;font-weight:700">${s.pa}</div></div><div><div style="font-size:10px;color:var(--muted)">Tries</div><div style="font-size:17px;font-weight:700;color:var(--gold)">${s.tries}</div></div></div></div>`;
