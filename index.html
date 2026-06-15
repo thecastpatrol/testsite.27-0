@@ -522,23 +522,29 @@ function renderPackPlayerList() {
   }
   const players = [...STATE.packPlayers]
     .filter(card => {
-      if (slotType && !card.positions.includes(slotType)) return false; // hide non-eligible
+      if (slotType && !card.positions.includes(slotType)) return false;
       return true;
     })
     .sort((a, b) => b.rating - a.rating);
   players.forEach(card => {
     const alreadyPicked = STATE.team.some(t => t && t.name === card.name && t.club === card.club && t.year === card.year);
     const isTribute = card.name === 'Jai Arrow';
+    const clubName = (CLUBS[card.club]?.name) || card.club;
+    const posTags = card.positions.map(p => `<span class="ptag ptag-${p}">${p}</span>`).join('');
+    const cc = CLUB_COLORS[card.club] || '#1a1a2e';
+    const cs = CLUB_SECONDARY[card.club] || '#fff';
+    const abbr = CLUB_ABBR[card.club] || card.club;
+    const clubTag = `<span class="club-tag" style="background:${cc};color:${cs};font-size:9px;font-weight:900;padding:4px 7px;border-radius:5px;letter-spacing:.5px;flex-shrink:0">${abbr}</span>`;
+
     const div = document.createElement('div');
-    const r = packRarityColor(card.rating);
-    const opacity = alreadyPicked ? 0.35 : 1;
-    if (isTribute) {
-      div.style.cssText = `background:#fff;border:2px solid #02702A;border-radius:8px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:8px;cursor:${alreadyPicked?'default':'pointer'};opacity:${opacity};box-shadow:0 0 10px rgba(2,112,42,0.25)`;
-      div.innerHTML = `<span style="font-size:20px;font-weight:900;color:#02702A;font-family:'Lilita One',cursive;min-width:30px">${card.rating}</span>${packClubBadge(card.club,'sm')}<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:800;color:#02702A">${card.name}</div><div style="font-size:10px;color:#3a7a50">${card.year} · ${card.positions.join(' / ')}</div></div>`;
-    } else {
-      div.style.cssText = `background:${r.bg};border:1.5px solid ${r.border};border-radius:8px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:8px;cursor:${alreadyPicked?'default':'pointer'};opacity:${opacity}`;
-      div.innerHTML = `<span style="font-size:20px;font-weight:900;color:${r.text};font-family:'Lilita One',cursive;min-width:30px">${card.rating}</span>${packClubBadge(card.club,'sm')}<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:800;color:${r.text}">${card.name}</div><div style="font-size:10px;color:${r.text};opacity:.7">${card.year} · ${card.positions.join(' / ')}</div></div>`;
-    }
+    div.className = 'player-row' + (isTribute ? ' pr-tribute' : '') + (alreadyPicked ? ' pr-taken' : '');
+
+    const badge = isTribute
+      ? `<div class="pr-badge" style="background:linear-gradient(135deg,#72BE8F,#02702A)">${card.rating}</div>`
+      : `<div class="pr-badge ${ratingClass(card.rating)}">${card.rating}</div>`;
+
+    div.innerHTML = `${badge}<div class="pr-info"><div class="pr-name">${card.name}</div><div class="pr-club">${clubName} · ${card.year}</div></div><div class="pr-right"><div class="pr-tags">${posTags}</div>${clubTag}</div>`;
+
     if (!alreadyPicked) {
       div.onclick = () => {
         if (_packSelectedSlot !== null) {
@@ -853,7 +859,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
 .social-link:hover{opacity:1}
 .soc-link{color:#f1c073;text-decoration:none;opacity:0.85;transition:opacity .2s}
 .soc-link:hover{opacity:1}
-#setup{align-items:center;justify-content:center;padding:16px 20px 8px;text-align:center}
+#setup{align-items:center;padding:16px 20px 8px;text-align:center}
 .setup-inner{max-width:600px;width:100%}
 .setup-profile{width:110px;height:110px;border-radius:50%;border:3px solid var(--gold);object-fit:cover;margin-bottom:16px;box-shadow:0 0 20px rgba(241,192,115,0.3)}
 .game-logo{font-family:'Lilita One',cursive;font-size:clamp(60px,15vw,100px);color:var(--gold);line-height:1;text-shadow:0 0 40px rgba(241,192,115,0.4)}
@@ -4733,17 +4739,7 @@ function finalSpin() {
   STATE.spinPickedThisSpin=false;
   const _spinBtn=document.getElementById('spinBtn');
   if(_spinBtn) _spinBtn.disabled=true;
-  // NRLFANATIC cheat: every spin returns Craig Wing only
-  if(STATE.teamName?.toUpperCase()==='NRLFANATIC'){
-    const wingRaw=RAW_PLAYERS.find(p=>p[0]==='Craig Wing');
-    if(wingRaw){
-      const[wN,wS,wP,wR]=wingRaw;const[wC,wYf,wYt]=wS[0];
-      const players=[{name:wN,positions:wP,rating:wR,club:wC,yf:wYf,yt:wYt}];
-      STATE.currentSpin={cid:wC,year:wYt,players};
-      displaySpin(wC,wYt,players);return;
-    }
-  }
-  let cid,year,players=[];
+    let cid,year,players=[];
   const pool=getSpinPool();
   let tries=0;
   do {
@@ -6343,7 +6339,7 @@ function resetGame(){
   const _lastMode=STATE.gameMode||'classic';
   STATE={team:Array(13).fill(null),takenNames:new Set(),currentSpin:null,pendingPlayer:null,season:null,spinPickedThisSpin:false,teamName:'My Team',gameMode:_lastMode,packs:[],packIdx:0,packAllCards:[],packPlayers:[]};
   const _rtni=document.getElementById('teamNameInput');
-  if(_rtni){try{const _sn=localStorage.getItem('27_teamName');_rtni.value=_sn||'';}catch(e){_rtni.value='';}  _rtni.style.borderColor='#333';}
+  if(_rtni){try{const _sn=localStorage.getItem('27_teamName');_rtni.value=(_sn&&_sn.toUpperCase()!=='NRLFANATIC'?_sn:'');}catch(e){_rtni.value='';}  _rtni.style.borderColor='#333';}
   if(typeof _autoTimer!=='undefined'&&_autoTimer){clearInterval(_autoTimer);_autoTimer=null;}
   const rb=document.getElementById('resultsBody'); if(rb) rb.innerHTML='';
   const rh=document.getElementById('resultHero'); if(rh) rh.innerHTML='';
@@ -6470,7 +6466,7 @@ function generateShareCard(){
     finalsColor='#777788';
   }
 
-  const eraLabel=STATE.yearFrom===1998&&STATE.yearTo===2026?'All-Time':STATE.yearFrom===STATE.yearTo?String(STATE.yearFrom):`${STATE.yearFrom}–${STATE.yearTo}`;
+  const eraLabel=STATE.gameMode==='pack'?'Pack Mode':STATE.yearFrom===1998&&STATE.yearTo===2026?'All-Time':STATE.yearFrom===STATE.yearTo?String(STATE.yearFrom):`${STATE.yearFrom}–${STATE.yearTo}`;
   const W=400,EXTRA=total27_0?68:0,H=860+EXTRA;
   const canvas=document.createElement('canvas');
   canvas.width=W*2;canvas.height=H*2;
@@ -6673,7 +6669,7 @@ function generateShareCard(){
 
 showScreen('setup');
 selectMode('classic');
-try{const _sn=localStorage.getItem('27_teamName');if(_sn){const _i=document.getElementById('teamNameInput');if(_i)_i.value=_sn;}}catch(e){}
+try{const _sn=localStorage.getItem('27_teamName');if(_sn&&_sn.toUpperCase()!=='NRLFANATIC'){const _i=document.getElementById('teamNameInput');if(_i)_i.value=_sn;}else if(_sn?.toUpperCase()==='NRLFANATIC'){localStorage.removeItem('27_teamName');}}catch(e){}
 // Reset to home if browser restores page from back-forward cache
 window.addEventListener('pageshow', function(e){
   if(e.persisted){ showScreen('setup'); selectMode(STATE.gameMode||'classic'); }
@@ -7125,7 +7121,7 @@ function buildShareCanvas(fmt){
     tx('27-0',14,y+8,'900 24px "Lilita One",cursive','#f5c518','left','middle');
   }
   // Era pill right
-  const era=STATE.yearFrom===1998&&STATE.yearTo===2026?'All-Time':STATE.yearFrom===STATE.yearTo?String(STATE.yearFrom):`${STATE.yearFrom}–${STATE.yearTo}`;
+  const era=STATE.gameMode==='pack'?'Pack Mode':STATE.yearFrom===1998&&STATE.yearTo===2026?'All-Time':STATE.yearFrom===STATE.yearTo?String(STATE.yearFrom):`${STATE.yearFrom}–${STATE.yearTo}`;
   ctx.font='700 10px system-ui';
   const eraW=ctx.measureText(era).width+16;
   rrect(W-14-eraW,y+9,eraW,18,9,'rgba(245,197,24,0.12)','rgba(245,197,24,0.3)',1);
