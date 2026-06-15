@@ -25,12 +25,14 @@ function selectMode(mode) {
     if (era) era.style.display='';
     if (btn) { btn.textContent='🎰 SPIN THE WHEEL'; btn.style.background=''; }
     if (grid) grid.innerHTML = _hiwClassic();
+    const rt=document.getElementById('ratingsToggle'); if(rt) rt.style.display='';
   } else {
     if (pb) { pb.style.background='linear-gradient(135deg,#1e3a8a,#3b5bdb)'; pb.style.borderColor='#6688ff'; pb.querySelector('div').style.color='#fff'; pb.querySelectorAll('div')[1].style.color='#aac4ff'; }
     if (cb) { cb.style.background='#12122a'; cb.style.borderColor='#2a2a4a'; cb.querySelector('div').style.color='#665522'; cb.querySelectorAll('div')[1].style.color='#443311'; }
     if (era) era.style.display='none';
     if (btn) { btn.textContent='📦 OPEN PACKS'; btn.style.background='linear-gradient(135deg,#1e3a8a,#3b5bdb)'; }
     if (grid) grid.innerHTML = _hiwPack();
+    const rt=document.getElementById('ratingsToggle'); if(rt) rt.style.display='none';
   }
 }
 function startSelectedMode() {
@@ -70,11 +72,18 @@ function buildWeightedPackPool() {
       if (!seen.has(key)) { seen.add(key); all.push({ name, club, year: yt, positions, rating }); }
     });
   });
+  // Keep only highest-rated stint per player name to prevent duplicates across packs
+  const byName = new Map();
+  all.forEach(c => {
+    const ex = byName.get(c.name);
+    if (!ex || c.rating > ex.rating) byName.set(c.name, c);
+  });
+  const deduped = [...byName.values()];
   return {
-    gold:   shuffleArray(all.filter(c => c.rating >= 90)),
-    purple: shuffleArray(all.filter(c => c.rating >= 85 && c.rating < 90)),
-    blue:   shuffleArray(all.filter(c => c.rating >= 80 && c.rating < 85)),
-    grey:   shuffleArray(all.filter(c => c.rating < 80)),
+    gold:   shuffleArray(deduped.filter(c => c.rating >= 90)),
+    purple: shuffleArray(deduped.filter(c => c.rating >= 85 && c.rating < 90)),
+    blue:   shuffleArray(deduped.filter(c => c.rating >= 80 && c.rating < 85)),
+    grey:   shuffleArray(deduped.filter(c => c.rating < 80)),
   };
 }
 
@@ -290,7 +299,7 @@ function showGoldWalkout(card, onDone) {
 
     <div id="woRating" style="opacity:0;transition:opacity 0.7s ease;text-align:center;margin-bottom:20px">
       <div style="font-size:88px;font-weight:900;color:${accentColor};font-family:'Lilita One',cursive;line-height:1;text-shadow:0 0 50px rgba(241,192,115,0.4)">${card.rating}</div>
-      <div style="font-size:12px;font-weight:800;color:#666;letter-spacing:3px;margin-top:6px;text-transform:uppercase">${card.positions.slice(0,2).join(' · ')}</div>
+      <div style="margin-top:10px;display:flex;justify-content:center;gap:6px">${card.positions.slice(0,2).map(p=>`<span style="display:inline-block;background:rgba(30,40,80,0.7);border:1.5px solid rgba(100,140,255,0.5);color:#93c5fd;font-size:11px;font-weight:900;padding:4px 12px;border-radius:6px;letter-spacing:.5px">${p}</span>`).join('')}</div>
     </div>
 
     <div id="woName" style="opacity:0;transition:opacity 0.7s ease;text-align:center;margin-bottom:36px">
@@ -325,48 +334,73 @@ function showGoldWalkout(card, onDone) {
 }
 
 // ── Reveal all cards: worst→best, ascending from bottom to top ──────────────
+function _packCardHTML(card) {
+  const r = packRarityColor(card.rating);
+  const isTribute = card.name === 'Jai Arrow';
+  const badge = packClubBadge(card.club, 'sm');
+  const posTags = card.positions.map(p => {
+    const colors = {FB:'#93c5fd',W:'#93c5fd',C:'#5eead4',FE:'#86efac',HB:'#86efac',HK:'#fdba74',P:'#fca5a5',SR:'#c4b5fd',LK:'#c4b5fd'};
+    const bgs = {FB:'#1e3a8a',W:'#1e3a8a',C:'#134e4a',FE:'#14532d',HB:'#14532d',HK:'#7c2d12',P:'#7f1d1d',SR:'#3b0764',LK:'#3b0764'};
+    return `<span style="display:inline-block;background:${bgs[p]||'#1a1a3a'};color:${colors[p]||'#93c5fd'};font-size:10px;font-weight:900;padding:3px 7px;border-radius:5px;letter-spacing:.3px">${p}</span>`;
+  }).join('');
+  if (isTribute) {
+    return {
+      css: 'background:#fff;border:2px solid #02702A;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 0 14px rgba(2,112,42,0.35)',
+      html: `<div style="font-size:26px;font-weight:900;color:#02702A;font-family:'Lilita One',cursive;min-width:36px;text-align:center;line-height:1">${card.rating}</div>${badge}<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:900;color:#02702A;line-height:1.2">${card.name}</div><div style="font-size:10px;color:#3a7a50;margin-top:2px">${card.year}</div></div><div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:4px;flex-shrink:0;justify-content:flex-end">${posTags}</div>`
+    };
+  }
+  return {
+    css: `background:${r.bg};border:${card.rating>=90?'2px':'1.5px'} solid ${r.border};border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px`,
+    html: `<div style="font-size:26px;font-weight:900;color:${r.text};font-family:'Lilita One',cursive;min-width:36px;text-align:center;line-height:1">${card.rating}</div>${badge}<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:900;color:${r.text};line-height:1.2">${card.name}</div><div style="font-size:10px;color:${r.text};opacity:.7;margin-top:2px">${card.year}</div></div><div style="display:flex;flex-direction:row;flex-wrap:wrap;gap:4px;flex-shrink:0;justify-content:flex-end">${posTags}</div>`
+  };
+}
+
 function revealPackCards() {
   const pack = STATE.packs[STATE.packIdx];
   const packNum = STATE.packIdx + 1;
   const isLast = STATE.packIdx === PACK_TOTAL - 1;
-  // Sort ascending — worst first, best last (best ends at top via column-reverse)
+  // Sort ascending — worst first (index 0), best last (index n-1)
   const sorted = [...pack].sort((a, b) => a.rating - b.rating);
+  const n = sorted.length;
   const inner = document.getElementById('packOpeningInner');
-  inner.style.cssText = 'padding:16px 16px 100px;max-width:480px;margin:0 auto;width:100%;box-sizing:border-box';
+  inner.style.cssText = 'padding:16px 16px 8px;max-width:480px;margin:0 auto;width:100%;box-sizing:border-box';
+
+  // Pre-render placeholders: worst at bottom (last in DOM), best at top (first in DOM)
+  let placeholders = '';
+  for (let i = n - 1; i >= 0; i--) {
+    placeholders += `<div id="pslot-${i}" style="height:56px;border:1.5px dashed #252535;border-radius:10px;background:#0a0a18"></div>`;
+  }
 
   inner.innerHTML = `
-    <div style="text-align:center;margin-bottom:16px">
+    <div style="text-align:center;margin-bottom:12px">
       <div style="font-size:10px;font-weight:900;letter-spacing:3px;color:#888;text-transform:uppercase;margin-bottom:4px">Pack ${packNum} of ${PACK_TOTAL}</div>
       <div style="font-size:20px;font-weight:900;color:#fff;font-family:'Lilita One',cursive">${isLast ? '🏆 Final Pack!' : `Pack ${packNum} Opened`}</div>
     </div>
-    <div id="packCardsList" style="display:flex;flex-direction:column-reverse;gap:8px"></div>
+    <div id="packCardsList" style="display:flex;flex-direction:column;gap:8px">${placeholders}</div>
   `;
 
-  // Fixed footer button — sits outside scrollable area
+  // Footer with Next/Build button + Skip All link
   const footer = document.getElementById('packOpeningFooter');
   if (footer) {
-    footer.innerHTML = `<div style="max-width:480px;margin:0 auto;padding:0 16px;box-sizing:border-box"><button onclick="${isLast ? 'finishPackOpening()' : 'nextPack()'}" style="width:100%;padding:16px;border:none;border-radius:12px;background:${isLast ? 'var(--gold)' : 'linear-gradient(135deg,#3b5bdb,#6688ff)'};color:${isLast ? '#111' : '#fff'};font-size:17px;font-weight:900;cursor:pointer;font-family:'Lilita One',cursive;box-shadow:0 4px 20px rgba(0,0,0,0.4)">${isLast ? '⚡ Build Your Team' : 'Next Pack →'}</button></div>`;
+    const mainBtn = isLast
+      ? `<button onclick="finishPackOpening()" style="width:100%;padding:16px;border:none;border-radius:12px;background:var(--gold);color:#111;font-size:17px;font-weight:900;cursor:pointer;font-family:'Lilita One',cursive;box-shadow:0 4px 20px rgba(0,0,0,0.4)">⚡ Build Your Team</button>`
+      : `<button onclick="nextPack()" style="width:100%;padding:16px;border:none;border-radius:12px;background:linear-gradient(135deg,#3b5bdb,#6688ff);color:#fff;font-size:17px;font-weight:900;cursor:pointer;font-family:'Lilita One',cursive;box-shadow:0 4px 20px rgba(0,0,0,0.4)">Next Pack →</button>`;
+    const skipBtn = !isLast
+      ? `<div style="text-align:center;margin-top:8px"><button onclick="finishPackOpening()" style="background:none;border:none;color:#555;font-size:12px;font-weight:700;cursor:pointer;padding:4px 12px;letter-spacing:.5px">Skip to build team ↗</button></div>`
+      : '';
+    footer.innerHTML = `<div style="max-width:480px;margin:0 auto;padding:0 16px;box-sizing:border-box">${mainBtn}${skipBtn}</div>`;
   }
 
-  const list = document.getElementById('packCardsList');
+  // Reveal cards one by one from bottom (i=0) to top (i=n-1)
   sorted.forEach((card, i) => {
     setTimeout(() => {
-      const r = packRarityColor(card.rating);
-      const isTribute = card.name === 'Jai Arrow';
-      const badge = packClubBadge(card.club, 'sm');
-      const div = document.createElement('div');
-      div.className = 'pack-card-up';
-      div.style.animationDelay = (i * 0.1) + 's';
-
-      if (isTribute) {
-        div.style.cssText = 'background:#fff;border:2px solid #02702A;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 0 14px rgba(2,112,42,0.35)';
-        div.innerHTML = `<div style="font-size:26px;font-weight:900;color:#02702A;font-family:'Lilita One',cursive;min-width:36px;text-align:center;line-height:1">${card.rating}</div>${badge}<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:900;color:#02702A;line-height:1.2">${card.name}</div><div style="font-size:10px;color:#3a7a50;opacity:.85">${card.year} · ${card.positions.join(' / ')}</div></div>`;
-      } else {
-        div.style.cssText = `background:${r.bg};border:${card.rating>=90?'2px':'1.5px'} solid ${r.border};border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px`;
-        div.innerHTML = `<div style="font-size:26px;font-weight:900;color:${r.text};font-family:'Lilita One',cursive;min-width:36px;text-align:center;line-height:1">${card.rating}</div>${badge}<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:900;color:${r.text};line-height:1.2">${card.name}</div><div style="font-size:10px;color:${r.text};opacity:.7">${card.year} · ${card.positions.join(' / ')}</div></div>`;
-      }
-      list.appendChild(div);
-    }, i * 120);
+      const slot = document.getElementById(`pslot-${i}`);
+      if (!slot) return;
+      const {css, html} = _packCardHTML(card);
+      slot.className = 'pack-card-up';
+      slot.style.cssText = css;
+      slot.innerHTML = html;
+    }, i * 200);
   });
 }
 
@@ -382,7 +416,7 @@ function finishPackOpening() {
   STATE.takenNames = new Set();
   STATE.packPlayers = STATE.packAllCards;
   showScreen('pack-squad');
-  packAutoBuild(); // auto-fill highest rated team to start
+  renderPackSquad();
 }
 
 let _packSelectedSlot = null;
@@ -4829,8 +4863,8 @@ const FIELD_POSITIONS={
   7: {x:32, y:63, a:'P'},
   8: {x:50, y:63, a:'HK'},
   9: {x:68, y:63, a:'P'},
-  12:{x:87, y:57, a:'SR'},
-  11:{x:50, y:79, a:'LK'},
+  11:{x:87, y:57, a:'SR'},
+  12:{x:50, y:79, a:'LK'},
 };
 function ratingClass(r){if(r>=90)return'rb-gold';if(r>=85)return'rb-grn';if(r>=80)return'rb-blu';if(r>=75)return'rb-teal';return'rb-gray';}
 function fieldTierClass(r){if(r>=90)return'fp-gold';if(r>=85)return'fp-lime';if(r>=80)return'fp-blue';if(r>=75)return'fp-silver';return'fp-bronze';}
@@ -6256,7 +6290,8 @@ function confirmReset(){
 }
 function resetGame(){
   if(typeof gtag!=='undefined')gtag('event','new_season_started',{event_category:'game'});
-  STATE={team:Array(13).fill(null),takenNames:new Set(),currentSpin:null,pendingPlayer:null,season:null,spinPickedThisSpin:false,teamName:'My Team',gameMode:'classic',packs:[],packIdx:0,packAllCards:[],packPlayers:[]};
+  const _lastMode=STATE.gameMode||'classic';
+  STATE={team:Array(13).fill(null),takenNames:new Set(),currentSpin:null,pendingPlayer:null,season:null,spinPickedThisSpin:false,teamName:'My Team',gameMode:_lastMode,packs:[],packIdx:0,packAllCards:[],packPlayers:[]};
   const _rtni=document.getElementById('teamNameInput');
   if(_rtni){try{const _sn=localStorage.getItem('27_teamName');_rtni.value=_sn||'';}catch(e){_rtni.value='';}  _rtni.style.borderColor='#333';}
   if(typeof _autoTimer!=='undefined'&&_autoTimer){clearInterval(_autoTimer);_autoTimer=null;}
@@ -6271,7 +6306,7 @@ function resetGame(){
   const sbn=document.getElementById('spinBtn'); if(sbn){sbn.disabled=false;}
   renderField();
   showScreen('setup');
-  selectMode('classic');
+  selectMode(STATE.gameMode||'classic');
 }
 
 // ════════════════════════════════════════════════════════
@@ -6607,7 +6642,7 @@ window.addEventListener('pageshow', function(e){
     <div style="font-size:12px;color:#666;font-weight:700;letter-spacing:.5px;margin-bottom:20px">6 packs · 6 players each · build your best 13</div>
     <div style="margin-bottom:24px">
       <input id="packTeamNameInput" type="text" maxlength="40" placeholder="Name your team (optional)"
-        style="background:var(--card2);border:2px solid #333;border-radius:10px;padding:12px 16px;font-size:14px;font-weight:700;color:var(--text);width:100%;text-align:center;outline:none;letter-spacing:0.5px;transition:border-color .2s;box-sizing:border-box"
+        style="background:var(--card2);border:2px solid #333;border-radius:10px;padding:12px 16px;font-size:16px;font-weight:700;color:var(--text);width:100%;text-align:center;outline:none;letter-spacing:0.5px;transition:border-color .2s;box-sizing:border-box"
         oninput="this.style.borderColor=this.value.trim()?'var(--gold)':'#333'"
         onkeydown="if(event.key==='Enter')startPackOpening()">
     </div>
@@ -6621,37 +6656,22 @@ window.addEventListener('pageshow', function(e){
 </div>
 
 <div id="pack-squad" class="screen" style="display:flex;flex-direction:column">
-  <!-- Rating bar -->
+  <!-- Rating bar — same style as classic mode -->
   <div id="packRatingBar" style="flex-shrink:0;background:#0d0d1f;border-bottom:1px solid #1a1a2e;padding:10px 14px;z-index:10">
     <div style="max-width:480px;margin:0 auto">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
-        <div style="flex:1">
-          <div style="font-size:9px;font-weight:900;letter-spacing:2px;color:#555;text-transform:uppercase;margin-bottom:3px">TEAM RATING</div>
-          <div style="display:flex;align-items:center;gap:8px">
-            <div id="packLiveRating" style="font-size:28px;font-weight:900;color:var(--gold);font-family:'Lilita One',cursive;line-height:1">—</div>
-            <div style="flex:1">
-              <div style="height:5px;background:#1a1a2e;border-radius:3px;overflow:hidden">
-                <div id="packRatingFill" style="height:100%;width:0%;background:var(--gold);border-radius:3px;transition:width .4s"></div>
-              </div>
-              <div id="packSlotCount" style="font-size:10px;color:#555;margin-top:3px;font-weight:700">0 / 13 players</div>
-            </div>
-          </div>
+      <div class="draft-strength-bar" style="margin:0">
+        <div class="dsb-main">
+          <div class="dsb-label">TEAM STRENGTH</div>
+          <div class="dsb-track"><div class="dsb-fill" id="packRatingFill"></div></div>
+          <div class="dsb-val" id="packLiveRating">—</div>
+        </div>
+        <div class="dsb-subs">
+          <div class="dsb-sub"><div class="dsb-slabel">Backs</div><div class="dsb-sval" id="packSubBacks">—</div></div>
+          <div class="dsb-sub"><div class="dsb-slabel">Forwards</div><div class="dsb-sval" id="packSubFwds">—</div></div>
+          <div class="dsb-sub"><div class="dsb-slabel">Spine</div><div class="dsb-sval" id="packSubSpine">—</div></div>
         </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
-        <div style="background:#0a0a18;border-radius:8px;padding:5px 8px;text-align:center">
-          <div style="font-size:8px;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">Backs</div>
-          <div id="packSubBacks" style="font-size:16px;font-weight:900;color:var(--muted)">—</div>
-        </div>
-        <div style="background:#0a0a18;border-radius:8px;padding:5px 8px;text-align:center">
-          <div style="font-size:8px;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">Forwards</div>
-          <div id="packSubFwds" style="font-size:16px;font-weight:900;color:var(--muted)">—</div>
-        </div>
-        <div style="background:#0a0a18;border-radius:8px;padding:5px 8px;text-align:center">
-          <div style="font-size:8px;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">Spine</div>
-          <div id="packSubSpine" style="font-size:16px;font-weight:900;color:var(--muted)">—</div>
-        </div>
-      </div>
+      <div id="packSlotCount" style="font-size:10px;color:#555;margin-top:4px;font-weight:700;text-align:center">0 / 13 players</div>
     </div>
   </div>
   <!-- Scrollable content -->
