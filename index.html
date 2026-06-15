@@ -372,48 +372,44 @@ function revealPackCards() {
   const pack = STATE.packs[STATE.packIdx];
   const packNum = STATE.packIdx + 1;
   const isLast = STATE.packIdx === PACK_TOTAL - 1;
-  // Sort ascending — worst first (index 0), best last (index n-1)
+  // Sort ascending — worst first (index 0=bottom), best last (index n-1=top)
   const sorted = [...pack].sort((a, b) => a.rating - b.rating);
-  const n = sorted.length;
   const inner = document.getElementById('packOpeningInner');
   inner.style.cssText = 'padding:16px 16px 8px;max-width:480px;margin:0 auto;width:100%;box-sizing:border-box';
 
-  // Pre-render placeholders: worst at bottom (last in DOM), best at top (first in DOM)
-  let placeholders = '';
-  for (let i = n - 1; i >= 0; i--) {
-    placeholders += `<div id="pslot-${i}" style="height:56px;border:1.5px dashed #252535;border-radius:10px;background:#0a0a18"></div>`;
-  }
+  // Pre-render all cards invisible — layout is fully static, no shifts
+  // Best card first in DOM (top), worst last (bottom)
+  const cardsHTML = [...sorted].reverse().map((card, ri) => {
+    const i = sorted.length - 1 - ri; // original index (0=worst/bottom)
+    const {css, html} = _packCardHTML(card);
+    return `<div id="pslot-${i}" style="${css};opacity:0;transition:opacity 0.35s ease">${html}</div>`;
+  }).join('');
 
   inner.innerHTML = `
     <div style="text-align:center;margin-bottom:12px">
       <div style="font-size:10px;font-weight:900;letter-spacing:3px;color:#888;text-transform:uppercase;margin-bottom:4px">Pack ${packNum} of ${PACK_TOTAL}</div>
       <div style="font-size:20px;font-weight:900;color:#fff;font-family:'Lilita One',cursive">${isLast ? '🏆 Final Pack!' : `Pack ${packNum} Opened`}</div>
     </div>
-    <div id="packCardsList" style="display:flex;flex-direction:column;gap:8px">${placeholders}</div>
+    <div id="packCardsList" style="display:flex;flex-direction:column;gap:8px">${cardsHTML}</div>
   `;
 
-  // Footer with Next/Build button + Skip animation link
+  // Footer — Next/Build button only (no skip button to accidentally tap)
   const footer = document.getElementById('packOpeningFooter');
   if (footer) {
     const mainBtn = isLast
       ? `<button onclick="finishPackOpening()" style="width:100%;padding:16px;border:none;border-radius:12px;background:var(--gold);color:#111;font-size:17px;font-weight:900;cursor:pointer;font-family:'Lilita One',cursive;box-shadow:0 4px 20px rgba(0,0,0,0.4)">⚡ Build Your Team</button>`
       : `<button onclick="nextPack()" style="width:100%;padding:16px;border:none;border-radius:12px;background:linear-gradient(135deg,#3b5bdb,#6688ff);color:#fff;font-size:17px;font-weight:900;cursor:pointer;font-family:'Lilita One',cursive;box-shadow:0 4px 20px rgba(0,0,0,0.4)">Next Pack →</button>`;
-    const skipBtn = `<div style="text-align:center;margin-top:8px"><button onclick="skipPackAnimation()" style="background:none;border:none;color:#555;font-size:12px;font-weight:700;cursor:pointer;padding:4px 12px;letter-spacing:.5px">Skip animation ↗</button></div>`;
-    footer.innerHTML = `<div style="max-width:480px;margin:0 auto;padding:0 16px;box-sizing:border-box">${mainBtn}${skipBtn}</div>`;
+    footer.innerHTML = `<div style="max-width:480px;margin:0 auto;padding:0 16px;box-sizing:border-box">${mainBtn}</div>`;
   }
 
-  // Reveal cards one by one from bottom (i=0) to top (i=n-1)
+  // Fade in cards one by one from bottom (i=0) to top (i=n-1)
   _packRevealCards = sorted;
   _packRevealTimers = [];
   sorted.forEach((card, i) => {
     const t = setTimeout(() => {
       const slot = document.getElementById(`pslot-${i}`);
-      if (!slot) return;
-      const {css, html} = _packCardHTML(card);
-      slot.className = 'pack-card-up';
-      slot.style.cssText = css;
-      slot.innerHTML = html;
-    }, i * 200);
+      if (slot) slot.style.opacity = '1';
+    }, i * 220);
     _packRevealTimers.push(t);
   });
 }
@@ -2413,7 +2409,7 @@ const RAW_PLAYERS = [
   ["Petero Civoniceva", [["broncos", 1998, 2012], ["panthers", 2008, 2011]], ["P"], 88],
   ["Jared Waerea-Hargreaves", [["seaeagles", 2009, 2009], ["roosters", 2010, 2024]], ["P"], 87],
   ["Preston Campbell", [["titans", 1998, 2011], ["sharks", 1999, 2002], ["panthers", 2003, 2006]], ["FE", "FB"], 87],
-  ["Danny Buderus", [["knights", 1998, 2013]], ["HK"], 89],
+  ["Danny Buderus", [["knights", 1998, 2013]], ["HK"], 90],
   ["Allan Langer", [["broncos", 1998, 2002]], ["HB"], 90],
   ["Mark Gasnier", [["dragons", 2000, 2011]], ["C"], 88],
   ["Michael Jennings", [["panthers", 2007, 2012], ["roosters", 2013, 2024], ["eels", 2016, 2020]], ["C"], 87],
