@@ -18,17 +18,6 @@ function startPackMode() {
   showScreen('pack-setup');
 }
 
-function buildPackCardPool() {
-  const cards = [];
-  RAW_PLAYERS.forEach(p => {
-    const [name, seasons, positions, rating] = p;
-    seasons.forEach(([club, yf, yt]) => {
-      cards.push({ name, club, year: yt, positions, rating });
-    });
-  });
-  return cards;
-}
-
 function shuffleArray(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -38,109 +27,219 @@ function shuffleArray(arr) {
   return a;
 }
 
+function buildWeightedPackPool() {
+  // Collect every unique card (one per club-stint)
+  const all = [];
+  const seen = new Set();
+  RAW_PLAYERS.forEach(p => {
+    const [name, seasons, positions, rating] = p;
+    seasons.forEach(([club, yf, yt]) => {
+      const key = `${name}|${club}|${yt}`;
+      if (!seen.has(key)) { seen.add(key); all.push({ name, club, year: yt, positions, rating }); }
+    });
+  });
+  // Tier the pool — heavy bias toward gold/purple, lighter on blue, minimal grey
+  const gold   = shuffleArray(all.filter(c => c.rating >= 90));
+  const purple = shuffleArray(all.filter(c => c.rating >= 85 && c.rating < 90));
+  const blue   = shuffleArray(all.filter(c => c.rating >= 80 && c.rating < 85));
+  const grey   = shuffleArray(all.filter(c => c.rating < 80));
+  // Target ~60 cards across 6 packs: ~10 gold, 18 purple, 22 blue, 10 grey
+  const picked = shuffleArray([
+    ...gold.slice(0, Math.min(gold.length, 10)),
+    ...purple.slice(0, Math.min(purple.length, 18)),
+    ...blue.slice(0, Math.min(blue.length, 22)),
+    ...grey.slice(0, Math.min(grey.length, 10)),
+  ]);
+  return picked;
+}
+
 function startPackOpening() {
   const nameEl = document.getElementById('packTeamNameInput');
   const tName = (nameEl?.value?.trim() || 'My Team').substring(0, 40);
   STATE.teamName = tName;
   STATE.gameMode = 'pack';
-  const pool = shuffleArray(buildPackCardPool());
-  const seen = new Set();
-  const picked = [];
-  for (const card of pool) {
-    const key = `${card.name}|${card.club}|${card.year}`;
-    if (!seen.has(key)) {
-      seen.add(key);
-      picked.push(card);
-    }
-    if (picked.length === 60) break;
+  const pool = buildWeightedPackPool();
+  // 6 packs, each 8–12 cards (last pack gets remainder)
+  const sizes = [];
+  let remaining = pool.length;
+  for (let i = 0; i < 5; i++) {
+    const s = 8 + Math.floor(Math.random() * 5); // 8–12
+    sizes.push(s);
+    remaining -= s;
   }
+  sizes.push(Math.max(remaining, 6)); // last pack gets rest (min 6)
   STATE.packs = [];
-  for (let i = 0; i < 10; i++) {
-    STATE.packs.push(picked.slice(i * 6, i * 6 + 6));
-  }
+  let offset = 0;
+  sizes.forEach(s => {
+    STATE.packs.push(pool.slice(offset, offset + s));
+    offset += s;
+  });
   STATE.packIdx = 0;
-  STATE.packAllCards = picked;
+  STATE.packAllCards = pool.slice(0, offset);
   showScreen('pack-opening');
-  renderPack();
+  renderPackIntro();
 }
+
+const PACK_TOTAL = 6;
 
 function packRarityColor(rating) {
-  if (rating >= 90) return { bg: 'linear-gradient(135deg,#c8952a,#f1c073,#e8b55a)', text: '#111', border: '#f1c073' };
-  if (rating >= 85) return { bg: 'linear-gradient(135deg,#3b0764,#6d28d9,#7c3aed)', text: '#fff', border: '#7c3aed' };
-  if (rating >= 80) return { bg: 'linear-gradient(135deg,#1e3a8a,#1d4ed8,#2563eb)', text: '#fff', border: '#3b82f6' };
-  return { bg: 'linear-gradient(135deg,#111827,#374151,#4b5563)', text: '#e5e7eb', border: '#6b7280' };
+  if (rating >= 90) return { bg: 'linear-gradient(135deg,#c8952a,#f1c073,#e8b55a)', text: '#111', border: '#f1c073', label: 'GOLD' };
+  if (rating >= 85) return { bg: 'linear-gradient(135deg,#3b0764,#6d28d9,#7c3aed)', text: '#fff', border: '#7c3aed', label: 'PURPLE' };
+  if (rating >= 80) return { bg: 'linear-gradient(135deg,#1e3a8a,#1d4ed8,#2563eb)', text: '#fff', border: '#3b82f6', label: 'BLUE' };
+  return { bg: 'linear-gradient(135deg,#111827,#374151,#4b5563)', text: '#e5e7eb', border: '#6b7280', label: 'SILVER' };
 }
 
-function renderWalkoutCard(card) {
-  const r = packRarityColor(card.rating);
-  const posStr = card.positions.slice(0, 2).join(' | ');
-  const emoji = fvEmoji(card.club) || '🏉';
-  return `
-    <div style="background:${r.bg};border:2px solid ${r.border};border-radius:16px;padding:24px 20px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,.6);position:relative;max-width:280px;margin:0 auto">
-      <div style="font-size:42px;font-weight:900;color:${r.text};font-family:'Lilita One',cursive;line-height:1">${card.rating}</div>
-      <div style="font-size:22px;font-weight:900;color:${r.text};margin:6px 0 4px;line-height:1.1">${card.name}</div>
-      <div style="font-size:28px;margin:6px 0">${emoji}</div>
-      <div style="font-size:12px;font-weight:700;color:${r.text};opacity:.85;margin-bottom:4px">${card.club}</div>
-      <div style="font-size:11px;color:${r.text};opacity:.7;margin-bottom:6px">${card.year}</div>
-      <div style="display:inline-block;background:rgba(0,0,0,.3);border-radius:6px;padding:3px 10px;font-size:11px;font-weight:800;color:${r.text};letter-spacing:.5px">${posStr}</div>
-    </div>
-  `;
-}
-
-function renderSmallCard(card) {
-  const r = packRarityColor(card.rating);
-  const posStr = card.positions.slice(0, 2).join(' / ');
-  const emoji = fvEmoji(card.club) || '🏉';
-  return `
-    <div style="background:${r.bg};border:1.5px solid ${r.border};border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:12px">
-      <div style="font-size:26px;font-weight:900;color:${r.text};font-family:'Lilita One',cursive;min-width:36px;text-align:center;line-height:1">${card.rating}</div>
-      <div style="font-size:20px">${emoji}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:13px;font-weight:900;color:${r.text};line-height:1.2">${card.name}</div>
-        <div style="font-size:10px;color:${r.text};opacity:.75">${card.club} · ${card.year}</div>
-      </div>
-      <div style="font-size:10px;font-weight:800;color:${r.text};opacity:.85;text-align:right">${posStr}</div>
-    </div>
-  `;
-}
-
-function renderPack() {
+// ── Pack intro: animated pack card that slides in ──────────────────
+function renderPackIntro() {
   const pack = STATE.packs[STATE.packIdx];
   const packNum = STATE.packIdx + 1;
-  const best = pack.reduce((a, b) => b.rating > a.rating ? b : a);
+  const isLast = STATE.packIdx === PACK_TOTAL - 1;
+  const cardCount = pack.length;
   const inner = document.getElementById('packOpeningInner');
+  inner.style.cssText = 'padding:0;max-width:480px;margin:0 auto;width:100%;box-sizing:border-box;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden';
+
   inner.innerHTML = `
-    <div style="text-align:center;margin-bottom:16px">
-      <div style="font-size:10px;font-weight:900;letter-spacing:3px;color:#888;text-transform:uppercase;margin-bottom:4px">Pack ${packNum} of 10</div>
-      <div style="font-size:22px;font-weight:900;color:var(--gold);font-family:'Lilita One',cursive">⭐ WALKOUT ⭐</div>
-      <div style="font-size:11px;color:#aaa;margin-top:2px">${fvShort(best.club) || best.club}</div>
+    <div style="text-align:center;margin-bottom:24px;padding:0 16px">
+      <div style="font-size:10px;font-weight:900;letter-spacing:3px;color:#555;text-transform:uppercase;margin-bottom:6px">Pack ${packNum} of ${PACK_TOTAL}</div>
+      <div style="font-size:13px;color:#666;font-weight:700">${cardCount} players inside</div>
     </div>
-    ${renderWalkoutCard(best)}
-    <button onclick="revealPack()" style="width:100%;margin-top:20px;padding:16px;border:none;border-radius:12px;background:var(--gold);color:#111;font-size:16px;font-weight:900;cursor:pointer;letter-spacing:.5px">Open Pack →</button>
+
+    <div id="packCardOuter" class="pack-card-anim" style="width:220px;height:310px;position:relative;cursor:pointer;-webkit-tap-highlight-color:transparent" onclick="openPackAnimation()">
+      <!-- Pack body -->
+      <div style="width:100%;height:100%;border-radius:18px;background:linear-gradient(160deg,#1a1040,#0d0d2a,#1a1040);border:2px solid #3b2a6e;box-shadow:0 16px 60px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.08);position:relative;overflow:hidden;animation:packPulse 2.4s ease-in-out infinite">
+        <!-- Shine sweep -->
+        <div style="position:absolute;top:0;left:-80%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);animation:packShine 2.8s ease-in-out 0.8s infinite;pointer-events:none"></div>
+        <!-- NRL badge placeholder -->
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center">
+          <div style="font-size:56px;margin-bottom:8px">📦</div>
+          <div style="font-size:26px;font-weight:900;color:var(--gold);font-family:'Lilita One',cursive;letter-spacing:2px">PACK ${packNum}</div>
+          <div style="font-size:11px;color:#6655aa;font-weight:700;letter-spacing:3px;margin-top:6px;text-transform:uppercase">NRL Era</div>
+        </div>
+        <!-- Bottom strip -->
+        <div style="position:absolute;bottom:0;left:0;right:0;padding:12px;text-align:center;background:linear-gradient(transparent,rgba(0,0,0,.5))">
+          <div style="font-size:10px;font-weight:900;color:#f1c073;letter-spacing:2px;text-transform:uppercase">${isLast ? '⭐ FINAL PACK ⭐' : '27-0 FANTASY'}</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:28px;text-align:center;padding:0 16px">
+      <button onclick="openPackAnimation()" style="background:var(--gold);border:none;border-radius:14px;padding:16px 48px;font-size:17px;font-weight:900;color:#111;cursor:pointer;letter-spacing:.5px;box-shadow:0 6px 24px rgba(241,192,115,.4)">
+        TAP TO OPEN
+      </button>
+    </div>
   `;
 }
 
-function revealPack() {
+// ── Crack open animation then reveal ──────────────────────────────
+function openPackAnimation() {
+  const packEl = document.getElementById('packCardOuter');
+  if (!packEl || packEl.dataset.opening) return;
+  packEl.dataset.opening = '1';
+  packEl.style.animation = 'packCrack .55s cubic-bezier(.23,1,.32,1) forwards';
+
+  // Flash overlay
+  const flash = document.createElement('div');
+  flash.style.cssText = 'position:fixed;inset:0;background:#fff;pointer-events:none;z-index:9999;animation:flashWhite .5s ease forwards';
+  document.body.appendChild(flash);
+  setTimeout(() => flash.remove(), 600);
+
+  setTimeout(() => {
+    const pack = STATE.packs[STATE.packIdx];
+    const best = pack.reduce((a, b) => b.rating > a.rating ? b : a);
+    if (best.rating >= 90) {
+      showGoldWalkout(best, () => revealPackCards());
+    } else {
+      revealPackCards();
+    }
+  }, 480);
+}
+
+// ── Special gold walkout for 90+ ──────────────────────────────────
+function showGoldWalkout(card, onDone) {
+  const emoji = (typeof fvEmoji === 'function' ? fvEmoji(card.club) : null) || '🏉';
+  const posStr = card.positions.slice(0, 2).join(' | ');
+  const ov = document.createElement('div');
+  ov.style.cssText = 'position:fixed;inset:0;z-index:9000;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden';
+  ov.innerHTML = `
+    <div style="position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(241,192,115,.18) 0%,transparent 70%);pointer-events:none;animation:walkoutBg 2.4s ease forwards"></div>
+    <!-- Sparkle dots -->
+    <div style="position:absolute;inset:0;pointer-events:none" id="goldSparkles"></div>
+    <div style="font-size:11px;font-weight:900;letter-spacing:4px;color:#f1c073;text-transform:uppercase;margin-bottom:16px;animation:goldTextPulse 1.4s ease-in-out infinite">⭐ GOLD WALKOUT ⭐</div>
+    <div id="goldCard" class="pack-gold-anim" style="background:linear-gradient(135deg,#c8952a,#f1c073,#e8b55a);border:3px solid #f1c073;border-radius:20px;padding:28px 24px;text-align:center;width:240px;box-sizing:border-box">
+      <div style="font-size:56px;font-weight:900;color:#111;font-family:'Lilita One',cursive;line-height:1">${card.rating}</div>
+      <div style="font-size:24px;font-weight:900;color:#111;margin:8px 0 4px;line-height:1.1">${card.name}</div>
+      <div style="font-size:32px;margin:8px 0">${emoji}</div>
+      <div style="font-size:13px;font-weight:700;color:#4a3000;margin-bottom:4px">${card.club}</div>
+      <div style="font-size:11px;color:#6b4400;margin-bottom:8px">${card.year}</div>
+      <div style="display:inline-block;background:rgba(0,0,0,.2);border-radius:6px;padding:4px 12px;font-size:11px;font-weight:800;color:#111;letter-spacing:.5px">${posStr}</div>
+    </div>
+    <button onclick="this.closest('div[style*=fixed]').remove();${onDone.name||'('+onDone.toString()+')'}()" style="margin-top:28px;background:var(--gold);border:none;border-radius:12px;padding:14px 40px;font-size:16px;font-weight:900;color:#111;cursor:pointer;letter-spacing:.5px">See All Cards →</button>
+  `;
+  document.body.appendChild(ov);
+
+  // Spawn gold sparkles
+  const sparkleWrap = ov.querySelector('#goldSparkles');
+  for (let i = 0; i < 18; i++) {
+    setTimeout(() => {
+      const s = document.createElement('div');
+      const x = Math.random() * 100, y = Math.random() * 100;
+      const size = 4 + Math.random() * 8;
+      s.style.cssText = `position:absolute;left:${x}%;top:${y}%;width:${size}px;height:${size}px;border-radius:50%;background:#f1c073;opacity:0;animation:goldTextPulse ${.8+Math.random()*.8}s ease-in-out ${Math.random()*.6}s infinite`;
+      sparkleWrap.appendChild(s);
+    }, i * 60);
+  }
+
+  // Button in walkout resolves via inline onclick string — use closure ref instead
+  const btn = ov.querySelector('button');
+  btn.onclick = () => { ov.remove(); onDone(); };
+}
+
+// ── Reveal all cards in pack with staggered slide-in ─────────────
+function revealPackCards() {
   const pack = STATE.packs[STATE.packIdx];
   const packNum = STATE.packIdx + 1;
-  const isLast = STATE.packIdx === 9;
+  const isLast = STATE.packIdx === PACK_TOTAL - 1;
   const sorted = [...pack].sort((a, b) => b.rating - a.rating);
   const inner = document.getElementById('packOpeningInner');
-  const cardsHtml = sorted.map(card => renderSmallCard(card)).join('');
+  inner.style.cssText = 'padding:16px;max-width:480px;margin:0 auto;width:100%;box-sizing:border-box';
+
   inner.innerHTML = `
     <div style="text-align:center;margin-bottom:16px">
-      <div style="font-size:10px;font-weight:900;letter-spacing:3px;color:#888;text-transform:uppercase;margin-bottom:4px">Pack ${packNum} of 10</div>
-      <div style="font-size:18px;font-weight:900;color:#fff;font-family:'Lilita One',cursive">${packNum === 10 ? '🏆 Final Pack!' : `Pack ${packNum} Players`}</div>
+      <div style="font-size:10px;font-weight:900;letter-spacing:3px;color:#888;text-transform:uppercase;margin-bottom:4px">Pack ${packNum} of ${PACK_TOTAL}</div>
+      <div style="font-size:20px;font-weight:900;color:#fff;font-family:'Lilita One',cursive">${isLast ? '🏆 Final Pack!' : `Pack ${packNum} Players`}</div>
     </div>
-    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">${cardsHtml}</div>
+    <div id="packCardsList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px"></div>
     <button onclick="${isLast ? 'finishPackOpening()' : 'nextPack()'}" style="width:100%;padding:16px;border:none;border-radius:12px;background:${isLast ? 'var(--gold)' : '#3b5bdb'};color:${isLast ? '#111' : '#fff'};font-size:16px;font-weight:900;cursor:pointer;letter-spacing:.5px">${isLast ? '🏟️ Build Your Team' : 'Next Pack →'}</button>
   `;
+
+  const list = document.getElementById('packCardsList');
+  sorted.forEach((card, i) => {
+    setTimeout(() => {
+      const r = packRarityColor(card.rating);
+      const emoji = (typeof fvEmoji === 'function' ? fvEmoji(card.club) : null) || '🏉';
+      const posStr = card.positions.slice(0, 2).join(' / ');
+      const isGold = card.rating >= 90;
+      const div = document.createElement('div');
+      div.className = 'pack-card-slide';
+      div.style.cssText = `background:${r.bg};border:${isGold?'2px':'1.5px'} solid ${r.border};border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:12px;animation-delay:${i*60}ms${isGold?';box-shadow:0 0 18px rgba(241,192,115,.45)':''}`;
+      div.innerHTML = `
+        <div style="font-size:26px;font-weight:900;color:${r.text};font-family:'Lilita One',cursive;min-width:36px;text-align:center;line-height:1">${card.rating}</div>
+        <div style="font-size:20px">${emoji}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:900;color:${r.text};line-height:1.2">${card.name}${isGold?'<span style="font-size:10px;margin-left:6px;background:rgba(0,0,0,.2);border-radius:4px;padding:1px 5px;letter-spacing:1px">⭐ GOLD</span>':''}</div>
+          <div style="font-size:10px;color:${r.text};opacity:.75">${card.club} · ${card.year}</div>
+        </div>
+        <div style="font-size:10px;font-weight:800;color:${r.text};opacity:.85;text-align:right">${posStr}</div>
+      `;
+      list.appendChild(div);
+    }, i * 80);
+  });
 }
 
 function nextPack() {
   STATE.packIdx++;
   showScreen('pack-opening');
-  renderPack();
+  renderPackIntro();
   document.getElementById('pack-opening').scrollTop = 0;
 }
 
@@ -185,7 +284,7 @@ function renderPackPlayerList() {
     const r = packRarityColor(card.rating);
     const opacity = alreadyPicked ? 0.35 : (slotType && !canPlay ? 0.45 : 1);
     div.style.cssText = `background:${r.bg};border:1.5px solid ${r.border};border-radius:8px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px;opacity:${opacity};cursor:${alreadyPicked?'default':'pointer'}`;
-    div.innerHTML = `<span style="font-size:20px;font-weight:900;color:${r.text};font-family:'Lilita One',cursive;min-width:30px">${card.rating}</span><span style="font-size:18px">${fvEmoji(card.club)||'🏉'}</span><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:800;color:${r.text}">${card.name}</div><div style="font-size:10px;color:${r.text};opacity:.75">${card.club} · ${card.year} · ${card.positions.join('/')}</div></div>`;
+    div.innerHTML = `<span style="font-size:20px;font-weight:900;color:${r.text};font-family:'Lilita One',cursive;min-width:30px">${card.rating}</span><span style="font-size:18px">${(typeof fvEmoji==='function'?fvEmoji(card.club):null)||'🏉'}</span><div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:800;color:${r.text}">${card.name}</div><div style="font-size:10px;color:${r.text};opacity:.75">${card.club} · ${card.year} · ${card.positions.join('/')}</div></div>`;
     if (!alreadyPicked && _packSelectedSlot !== null && canPlay) {
       div.onclick = () => packAssignPlayer(card);
     } else if (!alreadyPicked && !slotType) {
@@ -1412,6 +1511,21 @@ body {
 .sm-soc-facebook{background:#1877f2;color:#fff}
 .sm-bottom-row{display:flex;gap:8px}
 .sm-copy-btn{flex:1;padding:12px;border-radius:10px;border:1.5px solid #2a2a4a;background:#12122a;color:#aaa;font-size:13px;font-weight:700;cursor:pointer}
+/* ── Pack Opening Animations ── */
+@keyframes packSlideIn{from{transform:translateY(110%) scale(.92);opacity:0}to{transform:translateY(0) scale(1);opacity:1}}
+@keyframes packShine{0%{left:-80%}100%{left:120%}}
+@keyframes packPulse{0%,100%{box-shadow:0 8px 40px rgba(241,192,115,.35)}50%{box-shadow:0 8px 60px rgba(241,192,115,.7),0 0 80px rgba(241,192,115,.25)}}
+@keyframes packCrack{0%{transform:scale(1) rotate(0deg)}15%{transform:scale(1.05) rotate(-2deg)}30%{transform:scale(1.05) rotate(2deg)}45%{transform:scale(1.08) rotate(-1deg)}60%{transform:scale(1.1) rotate(1deg)}75%{transform:scale(1.05) rotate(0deg)}100%{transform:scale(0) rotate(0deg);opacity:0}}
+@keyframes cardSlideDown{from{transform:translateY(-60px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes goldSlam{0%{transform:scale(.4) translateY(-120px);opacity:0}65%{transform:scale(1.12) translateY(0);opacity:1}80%{transform:scale(.97)}100%{transform:scale(1)}}
+@keyframes goldGlow{0%,100%{box-shadow:0 0 30px rgba(241,192,115,.7),0 0 60px rgba(241,192,115,.35)}50%{box-shadow:0 0 60px rgba(241,192,115,1),0 0 120px rgba(241,192,115,.6),0 0 200px rgba(241,192,115,.2)}}
+@keyframes goldTextPulse{0%,100%{text-shadow:0 0 20px rgba(241,192,115,.8)}50%{text-shadow:0 0 40px #f1c073,0 0 80px rgba(241,192,115,.6)}}
+@keyframes walkoutBg{0%{opacity:0}30%{opacity:1}80%{opacity:1}100%{opacity:0}}
+@keyframes flashWhite{0%{opacity:0}30%{opacity:.9}100%{opacity:0}}
+@keyframes packCardIn{from{transform:scale(.85);opacity:0}to{transform:scale(1);opacity:1}}
+.pack-card-anim{animation:packSlideIn .5s cubic-bezier(.23,1,.32,1) forwards}
+.pack-gold-anim{animation:goldSlam .55s cubic-bezier(.23,1,.32,1) forwards,goldGlow 1.8s ease-in-out .6s infinite alternate}
+.pack-card-slide{animation:cardSlideDown .35s cubic-bezier(.23,1,.32,1) both}
 </style>
 </head>
 <body>
@@ -6242,7 +6356,8 @@ window.addEventListener('pageshow', function(e){
 <div id="pack-setup" class="screen">
   <div style="padding:32px 16px;max-width:480px;margin:0 auto;width:100%;box-sizing:border-box;text-align:center">
     <div style="font-size:11px;font-weight:900;letter-spacing:3px;color:#888;text-transform:uppercase;margin-bottom:8px">Game Mode</div>
-    <div style="font-size:32px;font-weight:900;color:var(--gold);font-family:'Lilita One',cursive;margin-bottom:24px">PACK MODE</div>
+    <div style="font-size:32px;font-weight:900;color:var(--gold);font-family:'Lilita One',cursive;margin-bottom:8px">PACK MODE</div>
+    <div style="font-size:12px;color:#666;font-weight:700;letter-spacing:.5px;margin-bottom:20px">6 packs · 8–12 players each · build your best 13</div>
     <div style="margin-bottom:24px">
       <input id="packTeamNameInput" type="text" maxlength="40" placeholder="Name your team (optional)"
         style="background:var(--card2);border:2px solid #333;border-radius:10px;padding:12px 16px;font-size:14px;font-weight:700;color:var(--text);width:100%;text-align:center;outline:none;letter-spacing:0.5px;transition:border-color .2s;box-sizing:border-box"
