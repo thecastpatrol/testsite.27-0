@@ -319,7 +319,7 @@ function showGoldWalkout(card, onDone) {
       <div style="font-size:34px;font-weight:900;color:${nameColor};font-family:'Lilita One',cursive;line-height:1.1;letter-spacing:.3px;text-shadow:0 0 30px rgba(255,255,255,0.15)">${card.name}</div>
     </div>
 
-    <button id="woBtn" style="display:none;background:${isTribute?'#02702A':'var(--gold)'};border:none;border-radius:12px;padding:14px 44px;font-size:16px;font-weight:900;color:${isTribute?'#fff':'#111'};cursor:pointer;font-family:'Lilita One',cursive">See All Cards →</button>
+    <button id="woBtn" style="opacity:0;transition:opacity 0.4s ease;background:${isTribute?'#02702A':'var(--gold)'};border:none;border-radius:12px;padding:14px 44px;font-size:16px;font-weight:900;color:${isTribute?'#fff':'#111'};cursor:pointer;font-family:'Lilita One',cursive">See All Cards →</button>
   `;
   document.body.appendChild(ov);
 
@@ -340,7 +340,7 @@ function showGoldWalkout(card, onDone) {
   setTimeout(() => { ov.querySelector('#woRating').style.opacity = '1'; }, 2600);
   setTimeout(() => {
     ov.querySelector('#woName').style.opacity = '1';
-    setTimeout(() => { const b=ov.querySelector('#woBtn'); if(b) b.style.display='block'; }, 500);
+    setTimeout(() => { const b=ov.querySelector('#woBtn'); if(b) b.style.opacity='1'; }, 500);
   }, 3700);
 
   ov.querySelector('#woBtn').onclick = () => { ov.remove(); onDone(); };
