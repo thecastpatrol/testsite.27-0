@@ -85,46 +85,101 @@ function startPackOpening() {
   STATE.gameMode = 'pack';
 
   const tiers = buildWeightedPackPool();
-  // 6 cards per pack. Gold distribution: min 4, avg ~6, max 10 total across 6 packs, max 3 per pack
-  const _gr = Math.random();
-  const totalGolds = _gr < 0.10 ? 4 : _gr < 0.30 ? 5 : _gr < 0.55 ? 6 : _gr < 0.75 ? 7 : _gr < 0.87 ? 8 : _gr < 0.95 ? 9 : 10;
-  const actualGolds = Math.min(totalGolds, tiers.gold.length);
-  const goldPerPack = Array(PACK_TOTAL).fill(0);
-  const packOrder = shuffleArray([0,1,2,3,4,5]);
-  let distributed = 0;
-  for (let pass = 0; pass < 3 && distributed < actualGolds; pass++) {
-    for (const pi of packOrder) {
-      if (distributed >= actualGolds) break;
-      if (goldPerPack[pi] < 3) { goldPerPack[pi]++; distributed++; }
-    }
-  }
-  const nonGold = shuffleArray([
-    ...tiers.purple.slice(0, 22),
-    ...tiers.blue.slice(0, 22),
-    ...tiers.grey.slice(0, 8),
-  ]);
 
-  STATE.packs = [];
-  let goldIdx = 0, nonGoldIdx = 0;
-  for (let i = 0; i < PACK_TOTAL; i++) {
-    const gCount = goldPerPack[i];
-    const fillCount = 6 - gCount;
-    const packCards = [
-      ...tiers.gold.slice(goldIdx, goldIdx + gCount),
-      ...nonGold.slice(nonGoldIdx, nonGoldIdx + fillCount),
-    ];
-    goldIdx += gCount;
-    nonGoldIdx += fillCount;
-    STATE.packs.push(shuffleArray(packCards));
+  // GOD PACK: 1 in 10,000 chance — all 36 cards are the best in the pool
+  if (Math.random() < 0.0001) {
+    const allCards = [...tiers.gold, ...tiers.purple, ...tiers.blue, ...tiers.grey]
+      .sort((a, b) => b.rating - a.rating);
+    STATE.packs = [];
+    for (let i = 0; i < PACK_TOTAL; i++) {
+      STATE.packs.push(allCards.slice(i * 6, i * 6 + 6));
+    }
+    STATE.isGodPack = true;
+  } else {
+    STATE.isGodPack = false;
+    // 6 cards per pack. Gold distribution: min 4, avg ~6, max 10 total across 6 packs, max 3 per pack
+    const _gr = Math.random();
+    const totalGolds = _gr < 0.10 ? 4 : _gr < 0.30 ? 5 : _gr < 0.55 ? 6 : _gr < 0.75 ? 7 : _gr < 0.87 ? 8 : _gr < 0.95 ? 9 : 10;
+    const actualGolds = Math.min(totalGolds, tiers.gold.length);
+    const goldPerPack = Array(PACK_TOTAL).fill(0);
+    const packOrder = shuffleArray([0,1,2,3,4,5]);
+    let distributed = 0;
+    for (let pass = 0; pass < 3 && distributed < actualGolds; pass++) {
+      for (const pi of packOrder) {
+        if (distributed >= actualGolds) break;
+        if (goldPerPack[pi] < 3) { goldPerPack[pi]++; distributed++; }
+      }
+    }
+    const nonGold = shuffleArray([
+      ...tiers.purple.slice(0, 22),
+      ...tiers.blue.slice(0, 22),
+      ...tiers.grey.slice(0, 8),
+    ]);
+
+    STATE.packs = [];
+    let goldIdx = 0, nonGoldIdx = 0;
+    for (let i = 0; i < PACK_TOTAL; i++) {
+      const gCount = goldPerPack[i];
+      const fillCount = 6 - gCount;
+      const packCards = [
+        ...tiers.gold.slice(goldIdx, goldIdx + gCount),
+        ...nonGold.slice(nonGoldIdx, nonGoldIdx + fillCount),
+      ];
+      goldIdx += gCount;
+      nonGoldIdx += fillCount;
+      STATE.packs.push(shuffleArray(packCards));
+    }
   }
 
   STATE.packIdx = 0;
   STATE.packAllCards = STATE.packs.flat();
-  showScreen('pack-opening');
-  renderPackIntro();
+
+  // Guarantee every SLOT type (especially HK) has at least one eligible card
+  if (!STATE.isGodPack) {
+    const slotTypes = [...new Set(SLOTS)];
+    const allPool = [...tiers.gold, ...tiers.purple, ...tiers.blue, ...tiers.grey];
+    slotTypes.forEach(pos => {
+      if (!STATE.packAllCards.some(c => c.positions.includes(pos))) {
+        const eligible = allPool.filter(c => c.positions.includes(pos));
+        if (eligible.length) {
+          const pick = eligible[Math.floor(Math.random() * eligible.length)];
+          // Replace lowest-rated card that is not the sole representative of its slot type
+          let worstIdx = -1, worstRtg = 999;
+          STATE.packAllCards.forEach((c, k) => {
+            if (c.rating < worstRtg) {
+              // Make sure removing this card won't orphan another position
+              const otherSlots = slotTypes.filter(s => s !== pos);
+              const stillOk = otherSlots.every(s => STATE.packAllCards.filter((_,j)=>j!==k).some(x=>x.positions.includes(s)));
+              if (stillOk) { worstRtg = c.rating; worstIdx = k; }
+            }
+          });
+          if (worstIdx >= 0) {
+            STATE.packAllCards[worstIdx] = pick;
+            const sz = 6;
+            STATE.packs = [];
+            for (let p = 0; p < PACK_TOTAL; p++) STATE.packs.push(STATE.packAllCards.slice(p*sz,(p+1)*sz));
+          }
+        }
+      }
+    });
+  }
+
+  if (STATE.isGodPack) {
+    showScreen('pack-opening');
+    const inner = document.getElementById('packOpeningInner');
+    const footer = document.getElementById('packOpeningFooter');
+    if (footer) footer.innerHTML = '';
+    if (inner) {
+      inner.style.cssText = 'padding:0;max-width:480px;margin:0 auto;width:100%;box-sizing:border-box;min-height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center';
+      inner.innerHTML = `<div style="font-size:60px;margin-bottom:16px">&#9889;</div><div style="font-size:11px;font-weight:900;letter-spacing:4px;color:#f1c073;text-transform:uppercase;margin-bottom:8px">You unlocked a</div><div style="font-size:42px;font-weight:900;font-family:'Lilita One',cursive;color:var(--gold);line-height:1;margin-bottom:8px">GOD PACK</div><div style="font-size:13px;color:#888;margin-bottom:32px">6 packs &middot; 36 best players ever</div><button onclick="renderPackIntro()" style="background:linear-gradient(135deg,#c8952a,#f1c073);border:none;border-radius:14px;padding:16px 48px;font-size:18px;font-weight:900;color:#111;cursor:pointer;font-family:'Lilita One',cursive;box-shadow:0 6px 24px rgba(245,197,24,0.5)">LET'S GO &#8594;</button>`;
+    }
+  } else {
+    showScreen('pack-opening');
+    renderPackIntro();
+  }
 }
 
-const PACK_TOTAL = 6;
+const PACK_TOTAL = 7;
 
 function packRarityColor(rating) {
   if (rating >= 90) return { bg: 'linear-gradient(135deg,#2a1800,#5a3200,#7a4800)', text: '#f1c073', border: '#c8952a', label: 'GOLD' };
@@ -305,10 +360,10 @@ function revealPackCards() {
 
       if (isTribute) {
         div.style.cssText = 'background:#fff;border:2px solid #02702A;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 0 14px rgba(2,112,42,0.35)';
-        div.innerHTML = `<div style="font-size:26px;font-weight:900;color:#02702A;font-family:'Lilita One',cursive;min-width:36px;text-align:center;line-height:1">${card.rating}</div>${badge}<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:900;color:#02702A;line-height:1.2">${card.name}</div><div style="font-size:10px;color:#3a7a50;opacity:.85">${card.year} · ${card.positions[0]}</div></div>`;
+        div.innerHTML = `<div style="font-size:26px;font-weight:900;color:#02702A;font-family:'Lilita One',cursive;min-width:36px;text-align:center;line-height:1">${card.rating}</div>${badge}<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:900;color:#02702A;line-height:1.2">${card.name}</div><div style="font-size:10px;color:#3a7a50;opacity:.85">${card.year} · ${card.positions.join(' / ')}</div></div>`;
       } else {
         div.style.cssText = `background:${r.bg};border:${card.rating>=90?'2px':'1.5px'} solid ${r.border};border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px`;
-        div.innerHTML = `<div style="font-size:26px;font-weight:900;color:${r.text};font-family:'Lilita One',cursive;min-width:36px;text-align:center;line-height:1">${card.rating}</div>${badge}<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:900;color:${r.text};line-height:1.2">${card.name}</div><div style="font-size:10px;color:${r.text};opacity:.7">${card.year} · ${card.positions[0]}</div></div>`;
+        div.innerHTML = `<div style="font-size:26px;font-weight:900;color:${r.text};font-family:'Lilita One',cursive;min-width:36px;text-align:center;line-height:1">${card.rating}</div>${badge}<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:900;color:${r.text};line-height:1.2">${card.name}</div><div style="font-size:10px;color:${r.text};opacity:.7">${card.year} · ${card.positions.join(' / ')}</div></div>`;
       }
       list.appendChild(div);
     }, i * 120);
@@ -361,27 +416,40 @@ function updatePackRatingBar() {
 }
 
 function renderPackSquad() {
-  const field = document.getElementById('packSquadField');
-  if (!field) return;
-  field.innerHTML = '';
+  const wrap = document.getElementById('packSquadField');
+  if (!wrap) return;
   updatePackRatingBar();
-  SLOTS.forEach(slot => {
-    const p = STATE.team[slot.i];
-    const isSelected = _packSelectedSlot === slot.i;
-    const div = document.createElement('div');
-    const rc = p ? (typeof ratingColor === 'function' ? ratingColor(p.rating) : '#f1c073') : null;
+  let h = '<div class="nrl-field-inner">';
+  Object.entries(FIELD_POSITIONS).forEach(([idx, pos]) => {
+    const i = parseInt(idx);
+    const p = STATE.team[i];
+    const slot = SLOTS[i];
+    const isSelected = _packSelectedSlot === i;
     const isTribute = p && p.name === 'Jai Arrow';
-    div.style.cssText = `display:flex;align-items:center;gap:8px;background:${isSelected?'#1e3a8a':isTribute?'rgba(2,112,42,0.15)':'#12122a'};border:1.5px solid ${isSelected?'#6688ff':isTribute?'#02702A':p?rc:'#2a2a3a'};border-radius:8px;padding:8px 12px;margin-bottom:5px;cursor:pointer;transition:background .15s`;
-    div.onclick = () => { _packSelectedSlot = (isSelected ? null : slot.i); renderPackSquad(); };
+    const lastName = p ? p.name.split(' ').slice(-1)[0] : '';
+    const fClubPrimary = p ? (CLUB_COLORS[p.club] || '#1a1a2e') : '';
+    const fClubSecondary = p ? (CLUB_SECONDARY[p.club] || '#fff') : '';
+    const clubTag = p ? `<span class="fpos-club" style="background:${fClubPrimary};color:${fClubSecondary}">${CLUB_ABBR[p.club] || p.club}</span>` : '';
+    const tierClass = p ? (isTribute ? 'fp-tribute' : (typeof fieldTierClass === 'function' ? fieldTierClass(p.rating) : '')) : '';
+    h += `<div class="fpos" style="left:${pos.x}%;top:${pos.y}%" onclick="packSelectFieldSlot(${i})">`;
+    h += `<div class="fpos-circle${p ? ' fp-filled ' + tierClass : ''}${isSelected ? ' fp-pack-sel' : ''}" style="position:relative">`;
     if (p) {
-      const badge = packClubBadge(p.club, 'sm');
-      div.innerHTML = `<span style="font-size:11px;font-weight:800;color:${isSelected?'#aabbff':'#666'};min-width:28px;letter-spacing:.5px">${slot.abbr}</span>${badge}<span style="font-size:13px;font-weight:900;color:${isTribute?'#02702A':rc};flex:1">${p.name}</span><span style="font-size:14px;font-weight:900;color:${isTribute?'#02702A':rc}">${p.rating}</span><button onclick="event.stopPropagation();packRemovePlayer(${slot.i})" style="background:none;border:none;color:#555;font-size:14px;cursor:pointer;padding:0 0 0 4px;line-height:1">✕</button>`;
+      h += `<div class="fpos-pname">${lastName}</div><div class="fpos-prtg">${p.rating}</div>${clubTag}`;
+      h += `<button onclick="event.stopPropagation();packRemovePlayer(${i})" style="position:absolute;top:-5px;right:-5px;background:#3a0808;border:1px solid #7a2020;border-radius:50%;width:15px;height:15px;cursor:pointer;color:#f87171;font-size:8px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center">✕</button>`;
     } else {
-      div.innerHTML = `<span style="font-size:11px;font-weight:800;color:${isSelected?'var(--gold)':'#444'};min-width:28px;letter-spacing:.5px">${slot.abbr}</span><span style="font-size:12px;color:${isSelected?'#aaa':'#333'};flex:1">${slot.label}</span><span style="font-size:10px;color:#2a2a3a">tap to fill</span>`;
+      h += `<span class="fpos-abbr">${slot.abbr}</span>`;
     }
-    field.appendChild(div);
+    h += `</div><div class="fpos-label"${isSelected ? ' style="color:var(--gold);font-weight:900"' : ''}>${slot.label}</div>`;
+    h += '</div>';
   });
+  h += '</div>';
+  wrap.innerHTML = h;
+  if (typeof scaleFieldNames === 'function') scaleFieldNames(wrap);
   renderPackPlayerList();
+}
+function packSelectFieldSlot(i) {
+  _packSelectedSlot = (_packSelectedSlot === i) ? null : i;
+  renderPackSquad();
 }
 function renderPackPlayerList() {
   const list = document.getElementById('packPlayerList');
@@ -407,10 +475,10 @@ function renderPackPlayerList() {
     const opacity = alreadyPicked ? 0.35 : 1;
     if (isTribute) {
       div.style.cssText = `background:#fff;border:2px solid #02702A;border-radius:8px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:8px;cursor:${alreadyPicked?'default':'pointer'};opacity:${opacity};box-shadow:0 0 10px rgba(2,112,42,0.25)`;
-      div.innerHTML = `<span style="font-size:20px;font-weight:900;color:#02702A;font-family:'Lilita One',cursive;min-width:30px">${card.rating}</span>${packClubBadge(card.club,'sm')}<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:800;color:#02702A">${card.name}</div><div style="font-size:10px;color:#3a7a50">${card.year} · ${card.positions[0]}</div></div>`;
+      div.innerHTML = `<span style="font-size:20px;font-weight:900;color:#02702A;font-family:'Lilita One',cursive;min-width:30px">${card.rating}</span>${packClubBadge(card.club,'sm')}<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:800;color:#02702A">${card.name}</div><div style="font-size:10px;color:#3a7a50">${card.year} · ${card.positions.join(' / ')}</div></div>`;
     } else {
       div.style.cssText = `background:${r.bg};border:1.5px solid ${r.border};border-radius:8px;padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:8px;cursor:${alreadyPicked?'default':'pointer'};opacity:${opacity}`;
-      div.innerHTML = `<span style="font-size:20px;font-weight:900;color:${r.text};font-family:'Lilita One',cursive;min-width:30px">${card.rating}</span>${packClubBadge(card.club,'sm')}<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:800;color:${r.text}">${card.name}</div><div style="font-size:10px;color:${r.text};opacity:.7">${card.year} · ${card.positions[0]}</div></div>`;
+      div.innerHTML = `<span style="font-size:20px;font-weight:900;color:${r.text};font-family:'Lilita One',cursive;min-width:30px">${card.rating}</span>${packClubBadge(card.club,'sm')}<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:800;color:${r.text}">${card.name}</div><div style="font-size:10px;color:${r.text};opacity:.7">${card.year} · ${card.positions.join(' / ')}</div></div>`;
     }
     if (!alreadyPicked && _packSelectedSlot !== null) {
       div.onclick = () => packAssignPlayer(card);
@@ -1661,6 +1729,8 @@ body {
 .pack-card-slide{animation:cardSlideDown .35s cubic-bezier(.23,1,.32,1) both}
 .pack-card-up{animation:packCardUp .4s cubic-bezier(.23,1,.32,1) both}
 @keyframes packCardUp{from{transform:translateY(50px);opacity:0}to{transform:translateY(0);opacity:1}}
+#pack-opening.screen.active,#pack-squad.screen.active{overflow:hidden}
+.fpos-circle.fp-pack-sel{outline:3px solid var(--gold);outline-offset:3px}
 </style>
 </head>
 <body>
@@ -2261,7 +2331,7 @@ const RAW_PLAYERS = [
   ["Michael Jennings", [["panthers", 2007, 2012], ["roosters", 2013, 2024], ["eels", 2016, 2020]], ["C"], 87],
   ["Matt Cooper", [["dragons", 2000, 2013]], ["C", "W"], 87],
   ["Steve Matai", [["seaeagles", 2005, 2016]], ["C"], 85],
-  ["Stephen Crichton", [["panthers", 2020, 2023], ["bulldogs", 2024, 2026]], ["C"], 86],
+  ["Stephen Crichton", [["panthers", 2020, 2023], ["bulldogs", 2024, 2026]], ["C"], 87],
   ["Ben Kennedy", [["raiders", 1998, 1999], ["knights", 2000, 2004], ["seaeagles", 2005, 2006]], ["LK", "SR"], 87],
   ["Josh Addo-Carr", [["tigers", 2016, 2016], ["storm", 2017, 2021], ["bulldogs", 2022, 2024], ["eels", 2025, 2026]], ["W"], 86],
   ["Rhys Wesser", [["panthers", 1998, 2008], ["rabbitohs", 2010, 2011]], ["FB"], 87],
@@ -4216,7 +4286,7 @@ const RAW_PLAYERS = [
   ["Chris Adams", [["knights", 2016, 2016]], ["HK"], 65],
   ["Jaxon Purdue", [["cowboys", 2024, 2026]], ["C", "FB"], 79],
   ["Mark Leafa", [["rabbitohs", 2004, 2004]], ["SR"], 65],
-  ["Brian To'o", [["panthers", 2019, 2026]], ["W"], 88],
+  ["Brian To'o", [["panthers", 2019, 2026]], ["W"], 89],
   ["Tino Fa'asuamaleaui", [["storm", 2020, 2020], ["titans", 2021, 2026]], ["LK", "P"], 86],
   ["Mark O'Meley", [["bears", 1999, 1999], ["northerneagles", 2000, 2001], ["bulldogs", 2002, 2007], ["roosters", 2008, 2009]], ["P"], 86],
   ["Ben Te'o", [["tigers", 2007, 2008], ["broncos", 2009, 2020], ["rabbitohs", 2013, 2014]], ["SR"], 85],
@@ -4468,6 +4538,7 @@ function showScreen(id) {
   const el = document.getElementById(id);
   el.classList.add('active');
   el.style.removeProperty('display');
+  el.scrollTop = 0;
   window.scrollTo(0, 0);
   const footer = document.getElementById('siteFooter');
   if (footer) footer.classList.toggle('footer-draft', id === 'draft');
@@ -4578,6 +4649,16 @@ function finalSpin() {
   STATE.spinPickedThisSpin=false;
   const _spinBtn=document.getElementById('spinBtn');
   if(_spinBtn) _spinBtn.disabled=true;
+  // NRLFANATIC cheat: every spin returns Craig Wing only
+  if(STATE.teamName?.toUpperCase()==='NRLFANATIC'){
+    const wingRaw=RAW_PLAYERS.find(p=>p[0]==='Craig Wing');
+    if(wingRaw){
+      const[wN,wS,wP,wR]=wingRaw;const[wC,wYf,wYt]=wS[0];
+      const players=[{name:wN,positions:wP,rating:wR,club:wC,yf:wYf,yt:wYt}];
+      STATE.currentSpin={cid:wC,year:wYt,players};
+      displaySpin(wC,wYt,players);return;
+    }
+  }
   let cid,year,players=[];
   const pool=getSpinPool();
   let tries=0;
@@ -6015,7 +6096,7 @@ function showResults() {
     const top3HTML = top3.map((card,i)=>{
       const r=packRarityColor(card.rating);
       const medal=['🥇','🥈','🥉'][i];
-      return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #1a1a2e"><span style="font-size:16px">${medal}</span><span style="font-size:20px;font-weight:900;color:${r.text};font-family:'Lilita One',cursive;min-width:28px">${card.rating}</span><div style="flex:1"><div style="font-size:13px;font-weight:800;color:#fff">${card.name}</div><div style="font-size:10px;color:#666">${card.club} · ${card.year}</div></div></div>`;
+      return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #1a1a2e"><span style="font-size:16px">${medal}</span><span style="font-size:20px;font-weight:900;color:${r.text};font-family:'Lilita One',cursive;min-width:28px">${card.rating}</span><div style="flex:1"><div style="font-size:13px;font-weight:800;color:#fff">${card.name}</div><div style="font-size:10px;color:#666">${CLUBS[card.club]?.name||card.club.charAt(0).toUpperCase()+card.club.slice(1)} · ${card.year}</div></div></div>`;
     }).join('');
     body.innerHTML=`<div class="results-section" style="background:linear-gradient(135deg,#0a1530,#0e1040);border:1.5px solid #3b5bdb;border-radius:12px;padding:16px;margin-bottom:12px"><div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><span style="font-size:20px">📦</span><div><div style="font-size:11px;font-weight:900;letter-spacing:2px;color:#6688ff;text-transform:uppercase">Pack Mode</div><div style="font-size:16px;font-weight:900;color:#fff;font-family:'Lilita One',cursive">Your Pack Summary</div></div></div><div style="font-size:10px;font-weight:900;letter-spacing:1.5px;color:#6688ff;text-transform:uppercase;margin-bottom:8px">Top 3 Pulls</div>${top3HTML}<div style="font-size:10px;font-weight:900;letter-spacing:1.5px;color:#6688ff;text-transform:uppercase;margin:12px 0 8px">Rarity Breakdown · ${allCards.length} Cards</div>${rarityHTML}${worstStarter?`<div style="margin-top:10px;font-size:10px;font-weight:900;letter-spacing:1.5px;color:#666;text-transform:uppercase;margin-bottom:4px">Lowest Rated Starter</div><div style="font-size:13px;color:#ccc">${worstStarter.rating} · <strong style="color:#fff">${worstStarter.name}</strong> (${worstStarter.year||''})</div>`:''}</div>`+body.innerHTML;
   }
@@ -6535,34 +6616,28 @@ window.addEventListener('pageshow', function(e){
 </div>
 
 <div id="pack-opening" class="screen" style="display:flex;flex-direction:column;height:100%">
-  <div id="packOpeningInner" style="flex:1;overflow-y:auto;padding:16px;max-width:480px;margin:0 auto;width:100%;box-sizing:border-box"></div>
+  <div id="packOpeningInner" style="flex:1;overflow-y:auto;min-height:0;padding:16px;max-width:480px;margin:0 auto;width:100%;box-sizing:border-box"></div>
   <div id="packOpeningFooter" style="flex-shrink:0;background:#0d0d1f;border-top:1px solid #1a1a2e;padding:12px 16px"></div>
 </div>
 
-<div id="pack-squad" class="screen">
-  <!-- Sticky rating bar -->
-  <div id="packRatingBar" style="position:sticky;top:0;z-index:10;background:#0d0d1f;border-bottom:1px solid #1a1a2e;padding:10px 16px">
+<div id="pack-squad" class="screen" style="display:flex;flex-direction:column">
+  <!-- Rating bar -->
+  <div id="packRatingBar" style="flex-shrink:0;background:#0d0d1f;border-bottom:1px solid #1a1a2e;padding:10px 14px;z-index:10">
     <div style="max-width:480px;margin:0 auto">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:6px">
         <div style="flex:1">
-          <div style="font-size:9px;font-weight:900;letter-spacing:2px;color:#555;text-transform:uppercase;margin-bottom:3px">Team Rating</div>
+          <div style="font-size:9px;font-weight:900;letter-spacing:2px;color:#555;text-transform:uppercase;margin-bottom:3px">TEAM RATING</div>
           <div style="display:flex;align-items:center;gap:8px">
             <div id="packLiveRating" style="font-size:28px;font-weight:900;color:var(--gold);font-family:'Lilita One',cursive;line-height:1">—</div>
             <div style="flex:1">
               <div style="height:5px;background:#1a1a2e;border-radius:3px;overflow:hidden">
-                <div id="packRatingFill" style="height:100%;width:0%;background:var(--gold);border-radius:3px;transition:width .3s ease"></div>
+                <div id="packRatingFill" style="height:100%;width:0%;background:var(--gold);border-radius:3px;transition:width .4s"></div>
               </div>
               <div id="packSlotCount" style="font-size:10px;color:#555;margin-top:3px;font-weight:700">0 / 13 players</div>
             </div>
           </div>
         </div>
-        <div style="display:flex;gap:6px">
-          <button onclick="packResetTeam()" style="padding:9px 12px;border:none;border-radius:9px;background:#2a1010;border:1px solid #5a2020;color:#ff6666;font-size:12px;font-weight:800;cursor:pointer">↺ Reset</button>
-          <button onclick="packAutoBuild()" style="padding:9px 12px;border:none;border-radius:9px;background:#3b5bdb;color:#fff;font-size:12px;font-weight:800;cursor:pointer">⚡ Auto</button>
-          <button onclick="packLockTeam()" style="padding:9px 14px;border:none;border-radius:9px;background:var(--gold);color:#111;font-size:12px;font-weight:800;cursor:pointer">▶ Start Season</button>
-        </div>
       </div>
-      <!-- Sub-ratings row matching classic mode -->
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
         <div style="background:#0a0a18;border-radius:8px;padding:5px 8px;text-align:center">
           <div style="font-size:8px;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px">Backs</div>
@@ -6579,12 +6654,20 @@ window.addEventListener('pageshow', function(e){
       </div>
     </div>
   </div>
-  <div style="padding:12px 16px;max-width:480px;margin:0 auto;width:100%;box-sizing:border-box">
-    <div style="font-size:10px;font-weight:900;letter-spacing:2px;color:#666;text-transform:uppercase;margin-bottom:8px;text-align:center">Pack Mode · Select 13 Players</div>
-    <div id="packSquadField"></div>
-    <div style="margin-top:12px">
-      <div id="packPlayerListHdr" style="font-size:10px;font-weight:900;letter-spacing:2px;color:#888;text-transform:uppercase;margin-bottom:8px">All Players</div>
+  <!-- Scrollable content -->
+  <div id="packSquadScroll" style="flex:1;overflow-y:auto;min-height:0">
+    <div id="packSquadField" class="nrl-field-wrap" style="cursor:pointer"></div>
+    <div style="padding:8px 14px 16px">
+      <div id="packPlayerListHdr" style="font-size:10px;font-weight:900;letter-spacing:2px;color:#888;text-transform:uppercase;margin-bottom:8px;padding:6px 0">All Players</div>
       <div id="packPlayerList"></div>
+    </div>
+  </div>
+  <!-- Fixed bottom -->
+  <div style="flex-shrink:0;background:#0d0d1f;border-top:1px solid #1a1a2e;padding:10px 12px">
+    <div style="max-width:480px;margin:0 auto;display:flex;gap:8px">
+      <button onclick="packResetTeam()" style="padding:10px 12px;border-radius:9px;background:#2a1010;border:1px solid #5a2020;color:#f87171;font-size:12px;font-weight:900;cursor:pointer;font-family:'Lilita One',cursive;white-space:nowrap">RESET</button>
+      <button onclick="packAutoBuild()" style="flex:1;padding:10px 12px;border:none;border-radius:9px;background:#1e3a8a;color:#93c5fd;font-size:12px;font-weight:900;cursor:pointer;font-family:'Lilita One',cursive">AUTO FILL</button>
+      <button onclick="packLockTeam()" style="flex:2;padding:10px 14px;border:none;border-radius:9px;background:var(--gold);color:#111;font-size:14px;font-weight:900;cursor:pointer;font-family:'Lilita One',cursive">&#9654; START SEASON</button>
     </div>
   </div>
 </div>
