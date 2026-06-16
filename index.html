@@ -504,6 +504,7 @@ function renderPackSquad() {
   if (!wrap) return;
   updatePackRatingBar();
   const fSize = computeFieldCircleSize(wrap);
+  const tm = fieldTextMetrics(fSize);
   let h = '<div class="nrl-field-inner">';
   Object.entries(FIELD_POSITIONS).forEach(([idx, pos]) => {
     const i = parseInt(idx);
@@ -514,7 +515,7 @@ function renderPackSquad() {
     const lastName = p ? p.name.split(' ').slice(-1)[0] : '';
     const fClubPrimary = p ? (CLUB_COLORS[p.club] || '#1a1a2e') : '';
     const fClubSecondary = p ? (CLUB_SECONDARY[p.club] || '#fff') : '';
-    const clubTag = p ? `<span class="fpos-club" style="background:${fClubPrimary};color:${fClubSecondary}">${CLUB_ABBR[p.club] || p.club}</span>` : '';
+    const clubTag = p ? `<span class="fpos-club" style="background:${fClubPrimary};color:${fClubSecondary};font-size:${tm ? tm.clubSize : 7}px">${CLUB_ABBR[p.club] || p.club}</span>` : '';
     const tierClass = p ? (isTribute ? 'fp-tribute' : (typeof fieldTierClass === 'function' ? fieldTierClass(p.rating) : '')) : '';
     h += `<div class="fpos" style="left:${pos.x}%;top:${pos.y}%;position:absolute;width:${fSize}px" onclick="packSelectFieldSlot(${i})">`;
     if (p) {
@@ -522,7 +523,7 @@ function renderPackSquad() {
     }
     h += `<div class="fpos-circle${p ? ' fp-filled ' + tierClass : ''}${isSelected ? ' fp-pack-sel' : ''}" style="width:${fSize}px;height:${fSize}px">`;
     if (p) {
-      h += `<div class="fpos-pname">${lastName}</div><div class="fpos-prtg">${p.rating}</div>${clubTag}`;
+      h += `<div class="fpos-pname" style="font-size:${tm.nameSize}px;max-width:${tm.nameMaxW}px;max-height:${tm.nameMaxH}px">${lastName}</div><div class="fpos-prtg" style="font-size:${tm.rtgSize}px">${p.rating}</div>${clubTag}`;
     } else {
       h += `<span class="fpos-abbr">${slot.abbr}</span>`;
     }
@@ -2565,7 +2566,7 @@ const RAW_PLAYERS = [
   ["Michael Hodgson", [["eels", 1999, 2000], ["raiders", 2001, 2006], ["titans", 2007, 2008], ["bulldogs", 2009, 2011]], ["P", "SR"], 84],
   ["Matt Burton", [["panthers", 2020, 2021], ["bulldogs", 2022, 2025]], ["FE", "C"], 83],
   ["Nathan Cayless", [["eels", 1998, 2010]], ["P", "SR"], 86],
-  ["Roy Asotasi", [["bulldogs", 2004, 2006], ["rabbitohs", 2007, 2013]], ["P", "SR"], 86],
+  ["Roy Asotasi", [["bulldogs", 2004, 2006], ["rabbitohs", 2007, 2013]], ["P"], 86],
   ["Scott Sattler", [["titans", 1998, 1998], ["panthers", 1999, 2003], ["tigers", 2004, 2004]], ["LK", "SR"], 87],
   ["Tawera Nikau", [["storm", 1998, 1999]], ["LK"], 83],
   ["Tonie Carroll", [["broncos", 1998, 2009]], ["LK", "SR"], 86],
@@ -4997,19 +4998,28 @@ function computeFieldCircleSize(wrap){
   // Keep circles from touching neighbours regardless of how cramped the container gets
   return Math.max(34,Math.min(108,minDist*0.8));
 }
+function fieldTextMetrics(fSize){
+  // Derive name/rating/club text sizing proportionally from the actual circle size,
+  // so text always matches whatever space computeFieldCircleSize decided was safe.
+  return {
+    nameSize: Math.max(6, Math.min(12, fSize*0.135)),
+    nameMaxW: fSize*0.86,
+    nameMaxH: fSize*0.30,
+    rtgSize: Math.max(12, Math.min(19, fSize*0.22)),
+    clubSize: Math.max(5.5, Math.min(7.5, fSize*0.09))
+  };
+}
 function scaleFieldNames(wrap){
   wrap.querySelectorAll('.fpos-pname').forEach(function(el){
     const isHyphenated=el.textContent.includes('-');
-    if(isHyphenated){
-      el.style.whiteSpace='normal';
-    } else {
-      el.style.whiteSpace='nowrap';
-      let sz=8;
+    el.style.overflow='hidden';
+    el.style.whiteSpace=isHyphenated?'normal':'nowrap';
+    let sz=parseFloat(el.style.fontSize)||8;
+    let guard=0;
+    while((el.scrollWidth>el.offsetWidth+0.5||el.scrollHeight>el.offsetHeight+0.5)&&sz>4&&guard<60){
+      sz-=0.25;
       el.style.fontSize=sz+'px';
-      while(el.scrollWidth>el.offsetWidth&&sz>4){
-        sz-=0.25;
-        el.style.fontSize=sz+'px';
-      }
+      guard++;
     }
   });
 }
@@ -5034,6 +5044,7 @@ function renderField(){
   const wrap=document.getElementById('nrlField');
   if(!wrap) return;
   const fSize=computeFieldCircleSize(wrap);
+  const tm=fieldTextMetrics(fSize);
   let h='<div class="nrl-field-inner">';
   Object.entries(FIELD_POSITIONS).forEach(([idx,pos])=>{
     const i=parseInt(idx);
@@ -5041,11 +5052,11 @@ function renderField(){
     const lastName=p?p.name.split(' ').slice(-1)[0]:'';
     const fClubPrimary=p?(CLUB_COLORS[p.club]||'#1a1a2a'):'';
     const fClubSecondary=p?(CLUB_SECONDARY[p.club]||'#fff'):'';
-    const clubTag=p?`<span class="fpos-club" style="background:${fClubPrimary};color:${fClubSecondary}">${CLUB_ABBR[p.club]||p.club.slice(0,3).toUpperCase()}</span>`:'';
+    const clubTag=p?`<span class="fpos-club" style="background:${fClubPrimary};color:${fClubSecondary};font-size:${tm.clubSize}px">${CLUB_ABBR[p.club]||p.club.slice(0,3).toUpperCase()}</span>`:'';
     h+=`<div class="fpos" style="left:${pos.x}%;top:${pos.y}%;width:${fSize}px">`;
     const isTributePlayer=p&&p.name==='Jai Arrow';
     h+=`<div class="fpos-circle${p?' fp-filled '+(isTributePlayer?'fp-tribute':fieldTierClass(p.rating)):''}" style="width:${fSize}px;height:${fSize}px">`;
-    h+=p?`<div class="fpos-pname">${lastName}</div><div class="fpos-prtg">${p.rating}</div>${clubTag}`:`<span class="fpos-abbr">${pos.a}</span>`;
+    h+=p?`<div class="fpos-pname" style="font-size:${tm.nameSize}px;max-width:${tm.nameMaxW}px;max-height:${tm.nameMaxH}px">${lastName}</div><div class="fpos-prtg" style="font-size:${tm.rtgSize}px">${p.rating}</div>${clubTag}`:`<span class="fpos-abbr">${pos.a}</span>`;
     h+=`</div><div class="fpos-label">${SLOTS[i].label}</div></div>`;
   });
   const filled=slotsFilledCount();
@@ -6469,7 +6480,7 @@ let _deferredInstallPrompt=null;
 window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();_deferredInstallPrompt=e;const btn=document.getElementById('installPromptBtn');if(btn)btn.style.display='block';});
 function showInstallModal(){const m=document.getElementById('installModal');if(m){m.style.display='flex';document.body.style.overflow='hidden';}}
 function closeInstallModal(){const m=document.getElementById('installModal');if(m){m.style.display='none';document.body.style.overflow='';}}
-function closePackPromoModal(){const m=document.getElementById('packPromoModal');if(m){m.style.display='none';document.body.style.overflow='';}try{localStorage.setItem('27_packPromoSeen','1');}catch(e){}}
+function closePackPromoModal(){const m=document.getElementById('packPromoModal');if(m){m.style.display='none';document.body.style.overflow='';}try{localStorage.setItem('27_packPromoSeen_v2','1');}catch(e){}}
 function tryPackModeNow(){
   closePackPromoModal();
   if(typeof selectMode==='function') selectMode('pack');
@@ -6477,7 +6488,7 @@ function tryPackModeNow(){
   if(btn){setTimeout(()=>{btn.scrollIntoView({behavior:'smooth',block:'center'});},150);}
 }
 function maybeShowPackPromoModal(){
-  try{ if(localStorage.getItem('27_packPromoSeen')) return; }catch(e){return;}
+  try{ if(localStorage.getItem('27_packPromoSeen_v2')) return; }catch(e){return;}
   const setupScreen=document.getElementById('setup');
   if(!setupScreen || !setupScreen.classList.contains('active')) return;
   const m=document.getElementById('packPromoModal');
@@ -6773,7 +6784,7 @@ function generateShareCard(){
 
 showScreen('setup');
 selectMode('classic');
-maybeShowPackPromoModal();
+document.addEventListener('DOMContentLoaded', maybeShowPackPromoModal);
 try{const _sn=localStorage.getItem('27_teamName');if(_sn&&_sn.toUpperCase()!=='NRLFANATIC'){const _i=document.getElementById('teamNameInput');if(_i)_i.value=_sn;}else if(_sn?.toUpperCase()==='NRLFANATIC'){localStorage.removeItem('27_teamName');}}catch(e){}
 // Reset to home if browser restores page from back-forward cache
 window.addEventListener('pageshow', function(e){
