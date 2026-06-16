@@ -503,6 +503,7 @@ function renderPackSquad() {
   const wrap = document.getElementById('packSquadField');
   if (!wrap) return;
   updatePackRatingBar();
+  const fSize = computeFieldCircleSize(wrap);
   let h = '<div class="nrl-field-inner">';
   Object.entries(FIELD_POSITIONS).forEach(([idx, pos]) => {
     const i = parseInt(idx);
@@ -515,11 +516,11 @@ function renderPackSquad() {
     const fClubSecondary = p ? (CLUB_SECONDARY[p.club] || '#fff') : '';
     const clubTag = p ? `<span class="fpos-club" style="background:${fClubPrimary};color:${fClubSecondary}">${CLUB_ABBR[p.club] || p.club}</span>` : '';
     const tierClass = p ? (isTribute ? 'fp-tribute' : (typeof fieldTierClass === 'function' ? fieldTierClass(p.rating) : '')) : '';
-    h += `<div class="fpos" style="left:${pos.x}%;top:${pos.y}%;position:absolute" onclick="packSelectFieldSlot(${i})">`;
+    h += `<div class="fpos" style="left:${pos.x}%;top:${pos.y}%;position:absolute;width:${fSize}px" onclick="packSelectFieldSlot(${i})">`;
     if (p) {
-      h += `<button onclick="event.stopPropagation();packRemovePlayer(${i})" style="position:absolute;top:-8px;right:-8px;background:#3a0808;border:1.5px solid #f87171;border-radius:50%;width:22px;height:22px;cursor:pointer;color:#f87171;font-size:13px;font-weight:900;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;z-index:10;touch-action:manipulation">✕</button>`;
+      h += `<button onclick="event.stopPropagation();packRemovePlayer(${i})" style="position:absolute;top:-6px;right:-6px;background:#3a0808;border:1.5px solid #f87171;border-radius:50%;width:17px;height:17px;cursor:pointer;color:#f87171;font-size:10px;font-weight:900;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;z-index:10;touch-action:manipulation">✕</button>`;
     }
-    h += `<div class="fpos-circle${p ? ' fp-filled ' + tierClass : ''}${isSelected ? ' fp-pack-sel' : ''}">`;
+    h += `<div class="fpos-circle${p ? ' fp-filled ' + tierClass : ''}${isSelected ? ' fp-pack-sel' : ''}" style="width:${fSize}px;height:${fSize}px">`;
     if (p) {
       h += `<div class="fpos-pname">${lastName}</div><div class="fpos-prtg">${p.rating}</div>${clubTag}`;
     } else {
@@ -657,9 +658,9 @@ function packResetTeam() {
   renderPackSquad();
 }
 function packAutoBuild() {
-  STATE.team = Array(13).fill(null);
-  STATE.takenNames = new Set();
+  // Only fill empty slots — leave players already placed by the user untouched
   SLOTS.forEach(slot => {
+    if (STATE.team[slot.i]) return;
     const eligible = STATE.packPlayers
       .filter(c => c.positions.includes(slot.type) && !STATE.takenNames.has(c.name + '|' + (c.year||'')))
       .sort((a, b) => b.rating - a.rating);
@@ -759,8 +760,8 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
 .nrl-field-wrap{background:linear-gradient(180deg,#1a5c2e 0%,#1e6b34 100%);padding:0;flex-shrink:0;position:relative;height:min(86vw,420px)}
 .nrl-field-inner{position:absolute;top:0;left:0;width:100%;height:100%}
 .field-row{display:none}
-.fpos{position:absolute;transform:translateX(-50%);text-align:center;width:min(68px,16vw)}
-.fpos-circle{width:min(58px,13.5vw);height:min(58px,13.5vw);border-radius:50%;border:2px dashed rgba(255,255,255,0.25);display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,0.22);margin:0 auto 2px;transition:all .3s;overflow:hidden}
+.fpos{position:absolute;transform:translateX(-50%);text-align:center;width:var(--fpos-size, min(68px,16vw))}
+.fpos-circle{width:var(--fpos-size, min(58px,13.5vw));height:var(--fpos-size, min(58px,13.5vw));border-radius:50%;border:2px dashed rgba(255,255,255,0.25);display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,0.22);margin:0 auto 2px;transition:all .3s;overflow:hidden}
 .fpos-circle.fp-filled{border:2px solid var(--gold);background:rgba(241,192,115,0.18)}
 .fpos-circle.fp-gold{border-color:#E8A848!important;background:rgba(232,168,72,0.22)!important}
 .fpos-circle.fp-gold .fpos-pname{color:#E8A848!important}
@@ -811,8 +812,8 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
   .player-section{padding:10px 14px 0;flex:1;overflow-y:auto}
 }
 @media(min-width:900px){
-  .fpos{width:78px}
-  .fpos-circle{width:66px;height:66px}
+  .fpos{width:var(--fpos-size, 78px)}
+  .fpos-circle{width:var(--fpos-size, 66px);height:var(--fpos-size, 66px)}
   .fpos-abbr{font-size:14px}
   .fpos-pname{font-size:9px;max-width:60px}
   .fpos-prtg{font-size:15px}
@@ -820,8 +821,8 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
 }
 /* Landscape phones: wide enough for desktop layout but very short — shrink circles to prevent overlap */
 @media(min-width:768px) and (max-height:500px){
-  .fpos{width:46px!important}
-  .fpos-circle{width:38px!important;height:38px!important}
+  .fpos{width:var(--fpos-size, 46px)!important}
+  .fpos-circle{width:var(--fpos-size, 38px)!important;height:var(--fpos-size, 38px)!important}
   .fpos-abbr{font-size:9px!important}
   .fpos-pname{font-size:6px!important;max-width:34px!important}
   .fpos-prtg{font-size:10px!important}
@@ -829,16 +830,16 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
   .fpos-label{display:none!important}
 }
 @media(min-width:1200px){
-  .fpos{width:92px}
-  .fpos-circle{width:80px;height:80px}
+  .fpos{width:var(--fpos-size, 92px)}
+  .fpos-circle{width:var(--fpos-size, 80px);height:var(--fpos-size, 80px)}
   .fpos-abbr{font-size:16px}
   .fpos-pname{font-size:11px;max-width:74px}
   .fpos-prtg{font-size:18px}
   .fpos-label{font-size:10.5px;max-width:92px}
 }
 @media(min-width:1400px){
-  .fpos{width:108px}
-  .fpos-circle{width:96px;height:96px}
+  .fpos{width:var(--fpos-size, 108px)}
+  .fpos-circle{width:var(--fpos-size, 96px);height:var(--fpos-size, 96px)}
   .fpos-abbr{font-size:18px}
   .fpos-pname{font-size:12px;max-width:88px}
   .fpos-prtg{font-size:20px}
@@ -1707,7 +1708,7 @@ body {
 /* ── Mobile improvements ── */
 @media (max-width: 600px) {
   .fpos-label { display: none; }
-  .fpos { width: 62px; }
+  .fpos { width: var(--fpos-size, 62px); }
   #setup { padding: 32px 18px 28px; }
   .game-logo { font-size: 78px; }
   .game-subtitle { letter-spacing: 2.5px; }
@@ -4980,6 +4981,22 @@ function ratingColor(r){if(r>=90)return'#E8A848';if(r>=85)return'#a3e635';if(r>=
 function ratingBg(r){if(r>=90)return'linear-gradient(135deg,#c8882a,#E8A848)';if(r>=85)return'linear-gradient(135deg,#65a30d,#a3e635)';if(r>=80)return'linear-gradient(135deg,#1d4ed8,#3b82f6)';if(r>=75)return'linear-gradient(135deg,#6b7280,#9ca3af)';return'linear-gradient(135deg,#92400e,#cd7f32)';}
 function posTagHtml(pos){return`<span class="ptag ptag-${pos}">${pos}</span>`;}
 
+function computeFieldCircleSize(wrap){
+  const rect=wrap.getBoundingClientRect();
+  const w=rect.width,h=rect.height;
+  if(!w||!h) return 58;
+  const pts=Object.values(FIELD_POSITIONS).map(p=>({x:p.x/100*w,y:p.y/100*h}));
+  let minDist=Infinity;
+  for(let i=0;i<pts.length;i++){
+    for(let j=i+1;j<pts.length;j++){
+      const dx=pts[i].x-pts[j].x,dy=pts[i].y-pts[j].y;
+      const d=Math.sqrt(dx*dx+dy*dy);
+      if(d<minDist) minDist=d;
+    }
+  }
+  // Keep circles from touching neighbours regardless of how cramped the container gets
+  return Math.max(34,Math.min(108,minDist*0.8));
+}
 function scaleFieldNames(wrap){
   wrap.querySelectorAll('.fpos-pname').forEach(function(el){
     const isHyphenated=el.textContent.includes('-');
@@ -5016,6 +5033,7 @@ function updateDraftStrengthBar(){
 function renderField(){
   const wrap=document.getElementById('nrlField');
   if(!wrap) return;
+  const fSize=computeFieldCircleSize(wrap);
   let h='<div class="nrl-field-inner">';
   Object.entries(FIELD_POSITIONS).forEach(([idx,pos])=>{
     const i=parseInt(idx);
@@ -5024,9 +5042,9 @@ function renderField(){
     const fClubPrimary=p?(CLUB_COLORS[p.club]||'#1a1a2a'):'';
     const fClubSecondary=p?(CLUB_SECONDARY[p.club]||'#fff'):'';
     const clubTag=p?`<span class="fpos-club" style="background:${fClubPrimary};color:${fClubSecondary}">${CLUB_ABBR[p.club]||p.club.slice(0,3).toUpperCase()}</span>`:'';
-    h+=`<div class="fpos" style="left:${pos.x}%;top:${pos.y}%">`;
+    h+=`<div class="fpos" style="left:${pos.x}%;top:${pos.y}%;width:${fSize}px">`;
     const isTributePlayer=p&&p.name==='Jai Arrow';
-    h+=`<div class="fpos-circle${p?' fp-filled '+(isTributePlayer?'fp-tribute':fieldTierClass(p.rating)):''}">`;
+    h+=`<div class="fpos-circle${p?' fp-filled '+(isTributePlayer?'fp-tribute':fieldTierClass(p.rating)):''}" style="width:${fSize}px;height:${fSize}px">`;
     h+=p?`<div class="fpos-pname">${lastName}</div><div class="fpos-prtg">${p.rating}</div>${clubTag}`:`<span class="fpos-abbr">${pos.a}</span>`;
     h+=`</div><div class="fpos-label">${SLOTS[i].label}</div></div>`;
   });
